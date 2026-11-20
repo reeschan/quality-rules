@@ -1,0 +1,76 @@
+{
+  "name": "@reeschan/quality-rules-react",
+  "version": "0.1.0",
+  "description": "Selectable code rules for React projects: a pack of accessibility and JSX lint rules and conventions, and custom lint rules that run on oxlint and ESLint",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reeschan/quality-rules.git",
+    "directory": "packages/react"
+  },
+  "keywords": [
+    "oxlint",
+    "eslint",
+    "eslintplugin",
+    "lint",
+    "react",
+    "rules"
+  ],
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./conventions/*": "./dist/conventions/*",
+    "./packs/*": "./packs/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "packs"
+  ],
+  "qualityRules": {
+    "packs": "packs",
+    "conventions": "dist/conventions",
+    "rules": "."
+  },
+  "scripts": {
+    "build": "tsdown src/rules/index.ts --format esm --dts --clean && node -e \"require('node:fs').cpSync('conventions', 'dist/conventions', { recursive: true })\"",
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "eslint": ">=9.0.0",
+    "eslint-plugin-jsx-a11y": "^6.10.0",
+    "eslint-plugin-react": "^7.37.0"
+  },
+  "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
+    "eslint-plugin-jsx-a11y": {
+      "optional": true
+    },
+    "eslint-plugin-react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "eslint": "^10.15.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "lint-fixture-runner": "workspace:*",
+    "tsdown": "^0.23.7",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.1"
+  }
+}

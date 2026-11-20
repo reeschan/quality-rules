@@ -1,0 +1,403 @@
+{
+  "description": "React: accessibility and JSX rules of Biome, and props read as props.xxx",
+  "rules": [
+    {
+      "id": "quality-rules/no-props-destructuring",
+      "tool": "oxlint",
+      "description": "Disallow destructuring props in the parameter of a component (refer to props.xxx)",
+      "added": "0.1.0",
+      "config": {
+        "oxlint": {
+          "rules": {
+            "quality-rules/no-props-destructuring": "error"
+          }
+        },
+        "eslint": {
+          "rules": {
+            "quality-rules/no-props-destructuring": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/useAltText",
+      "tool": "biome",
+      "description": "Require a text alternative (alt) on images and other media elements",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "a11y": {
+                "useAltText": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "jsx-a11y": "eslint-plugin-jsx-a11y"
+          },
+          "rules": {
+            "jsx-a11y/alt-text": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/useButtonType",
+      "tool": "biome",
+      "description": "Require an explicit type attribute on button elements",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "a11y": {
+                "useButtonType": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "react": "eslint-plugin-react"
+          },
+          "settings": {
+            "react": {
+              "version": "detect"
+            }
+          },
+          "rules": {
+            "react/button-has-type": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/useValidAriaRole",
+      "tool": "biome",
+      "description": "Require the role attribute to hold a valid ARIA role",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "a11y": {
+                "useValidAriaRole": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "jsx-a11y": "eslint-plugin-jsx-a11y"
+          },
+          "rules": {
+            "jsx-a11y/aria-role": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/useValidAriaProps",
+      "tool": "biome",
+      "description": "Require ARIA attributes to be valid for the element",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "a11y": {
+                "useValidAriaProps": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "jsx-a11y": "eslint-plugin-jsx-a11y"
+          },
+          "rules": {
+            "jsx-a11y/aria-props": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/useKeyWithClickEvents",
+      "tool": "biome",
+      "description": "Require a keyboard event handler next to onClick",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "a11y": {
+                "useKeyWithClickEvents": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "jsx-a11y": "eslint-plugin-jsx-a11y"
+          },
+          "rules": {
+            "jsx-a11y/click-events-have-key-events": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/useAnchorContent",
+      "tool": "biome",
+      "description": "Require anchor elements to have content that screen readers can read",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "a11y": {
+                "useAnchorContent": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "jsx-a11y": "eslint-plugin-jsx-a11y"
+          },
+          "rules": {
+            "jsx-a11y/anchor-has-content": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/useIframeTitle",
+      "tool": "biome",
+      "description": "Require a title attribute on iframe elements",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "a11y": {
+                "useIframeTitle": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "jsx-a11y": "eslint-plugin-jsx-a11y"
+          },
+          "rules": {
+            "jsx-a11y/iframe-has-title": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noRedundantRoles",
+      "tool": "biome",
+      "description": "Disallow a role attribute that repeats the implicit role of the element",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "a11y": {
+                "noRedundantRoles": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "jsx-a11y": "eslint-plugin-jsx-a11y"
+          },
+          "rules": {
+            "jsx-a11y/no-redundant-roles": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noAriaHiddenOnFocusable",
+      "tool": "biome",
+      "description": "Disallow aria-hidden on elements that can take focus",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "a11y": {
+                "noAriaHiddenOnFocusable": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "jsx-a11y": "eslint-plugin-jsx-a11y"
+          },
+          "rules": {
+            "jsx-a11y/no-aria-hidden-on-focusable": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/useJsxKeyInIterable",
+      "tool": "biome",
+      "description": "Require a key prop on elements created in an iteration",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "correctness": {
+                "useJsxKeyInIterable": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "react": "eslint-plugin-react"
+          },
+          "settings": {
+            "react": {
+              "version": "detect"
+            }
+          },
+          "rules": {
+            "react/jsx-key": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noChildrenProp",
+      "tool": "biome",
+      "description": "Disallow passing children as a prop",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "correctness": {
+                "noChildrenProp": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "react": "eslint-plugin-react"
+          },
+          "settings": {
+            "react": {
+              "version": "detect"
+            }
+          },
+          "rules": {
+            "react/no-children-prop": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noVoidElementsWithChildren",
+      "tool": "biome",
+      "description": "Disallow children on void elements such as br and img",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "correctness": {
+                "noVoidElementsWithChildren": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "react": "eslint-plugin-react"
+          },
+          "settings": {
+            "react": {
+              "version": "detect"
+            }
+          },
+          "rules": {
+            "react/void-dom-elements-no-children": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noDuplicateJsxProps",
+      "tool": "biome",
+      "description": "Disallow the same prop twice on one JSX element",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "suspicious": {
+                "noDuplicateJsxProps": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "react": "eslint-plugin-react"
+          },
+          "settings": {
+            "react": {
+              "version": "detect"
+            }
+          },
+          "rules": {
+            "react/jsx-no-duplicate-props": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noCommentText",
+      "tool": "biome",
+      "description": "Disallow comment-like text that is written as JSX text",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "suspicious": {
+                "noCommentText": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "plugins": {
+            "react": "eslint-plugin-react"
+          },
+          "settings": {
+            "react": {
+              "version": "detect"
+            }
+          },
+          "rules": {
+            "react/jsx-no-comment-textnodes": "error"
+          }
+        }
+      }
+    }
+  ]
+}

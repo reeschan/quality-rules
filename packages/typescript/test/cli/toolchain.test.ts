@@ -280,10 +280,12 @@ describe('the generated ESLint configuration on real ESLint', () => {
       options: { 'max-lines-per-function': 15 },
     });
     await sync(project);
-    // Leave max-depth out of resolved, as the manifest is after an upgrade that added it.
+    // Make the manifest look like it was synced at a version before max-depth was added: an
+    // older version in packages, and max-depth not in resolved.
     const manifest = await project.readJson<Manifest>('quality-rules.json');
     await project.writeManifest({
       ...manifest,
+      packages: { ...manifest.packages, [typescriptPackageName]: '0.0.0' },
       resolved: manifest.resolved.filter((id) => id !== 'max-depth'),
     });
     const output = await sync(project);

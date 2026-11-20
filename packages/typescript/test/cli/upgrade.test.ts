@@ -21,6 +21,8 @@ const VANISHED_HEADING =
 interface Manifest {
   packages: Record<string, string>;
   exclude?: string[];
+  include?: string[];
+  options?: Record<string, unknown>;
   resolved: string[];
 }
 
@@ -137,7 +139,7 @@ describe('sync after the installed package goes from 1.0.0 to 2.0.0', () => {
     expect(resolved).not.toContain('no-console');
   });
 
-  it('writes the installed versions into packages and keeps the same items pending on the next sync', async () => {
+  it('keeps the old version in packages and the same items pending on the next sync', async () => {
     const project = await projectOnV1({ packs: ['guards'] });
     expect((await manifestOf(project)).packages).toEqual({ [SAMPLE_PACKAGE]: '1.0.0' });
     await upgradeToV2(project);
@@ -147,7 +149,7 @@ describe('sync after the installed package goes from 1.0.0 to 2.0.0', () => {
     const second = await sync(project);
     const afterSecond = await manifestOf(project);
 
-    expect(afterFirst.packages).toEqual({ [SAMPLE_PACKAGE]: '2.0.0' });
+    expect(afterFirst.packages).toEqual({ [SAMPLE_PACKAGE]: '1.0.0' });
     expect(pendingIds(first)).toEqual(['FIX-902', 'no-alert']);
     expect(pendingIds(second)).toEqual(pendingIds(first));
     expect(afterSecond).toEqual(afterFirst);
@@ -284,6 +286,139 @@ describe('sync after the installed package goes from 1.0.0 to 2.0.0', () => {
   });
 });
 
+describe('pending items and the version in packages', () => {
+  it('turns an ID taken out of exclude back on at once, without making it pending', async () => {
+    const project = await projectOnV1({ packs: ['guards'], exclude: ['no-debugger'] });
+    await project.writeManifest({ ...(await manifestOf(project)), exclude: [] });
+
+    const output = await sync(project);
+
+    expect(pendingIds(output)).toEqual([]);
+    expect((await manifestOf(project)).resolved).toContain('no-debugger');
+    expect((await oxlintRules(project))['no-debugger']).toBe('error');
+  });
+
+  it('turns a convention taken out of exclude and its rules back on at once', async () => {
+    const project = await projectOnV1({ packs: ['guards'], exclude: ['FIX-901'] });
+    expect((await manifestOf(project)).resolved).toEqual(['quality-rules/no-sample-call']);
+    await project.writeManifest({ ...(await manifestOf(project)), exclude: [] });
+
+    const output = await sync(project);
+
+    expect(pendingIds(output)).toEqual([]);
+    expect((await manifestOf(project)).resolved).toEqual([
+      'FIX-901',
+      'no-console',
+      'no-debugger',
+      'quality-rules/no-sample-call',
+    ]);
+  });
+
+  it('turns an excluded ID back on at once while the additions of an upgrade stay pending', async () => {
+    const project = await projectOnV1({ packs: ['guards'], exclude: ['no-debugger'] });
+    await upgradeToV2(project);
+    await sync(project);
+    await project.writeManifest({ ...(await manifestOf(project)), exclude: [] });
+
+    const output = await sync(project);
+
+    expect(pendingIds(output)).toEqual(['FIX-902', 'no-alert']);
+    const manifest = await manifestOf(project);
+    expect(manifest.resolved).toEqual(['no-console', 'no-debugger']);
+    expect(manifest.packages).toEqual({ [SAMPLE_PACKAGE]: '1.0.0' });
+    expect((await oxlintRules(project))['no-debugger']).toBe('error');
+  });
+
+  it('raises the version in packages once the last pending item is accepted', async () => {
+    const project = await projectOnV1({ packs: ['guards'] });
+    await upgradeToV2(project);
+    await sync(project);
+
+    await sync(project, '--accept', 'no-alert');
+    const afterOne = await manifestOf(project);
+    const again = await sync(project);
+
+    expect(afterOne.packages).toEqual({ [SAMPLE_PACKAGE]: '1.0.0' });
+    expect(pendingIds(again)).toEqual(['FIX-902']);
+    expect((await manifestOf(project)).resolved).toContain('no-alert');
+
+    await sync(project, '--accept', 'FIX-902');
+    const afterLast = await manifestOf(project);
+    const last = await sync(project);
+
+    expect(afterLast.packages).toEqual({ [SAMPLE_PACKAGE]: '2.0.0' });
+    expect(pendingIds(last)).toEqual([]);
+    expect((await manifestOf(project)).resolved).toEqual([
+      'FIX-902',
+      'no-alert',
+      'no-console',
+      'no-debugger',
+    ]);
+  });
+
+  it('raises the version in packages once the last pending items are excluded, and turns them on at once when taken out of exclude', async () => {
+    const project = await projectOnV1({ packs: ['guards'] });
+    await upgradeToV2(project);
+    await sync(project);
+    await project.writeManifest({
+      ...(await manifestOf(project)),
+      exclude: ['FIX-902', 'no-alert'],
+    });
+
+    const excluded = await sync(project);
+
+    expect(pendingIds(excluded)).toEqual([]);
+    expect((await manifestOf(project)).packages).toEqual({ [SAMPLE_PACKAGE]: '2.0.0' });
+
+    await project.writeManifest({ ...(await manifestOf(project)), exclude: [] });
+    const restored = await sync(project);
+
+    expect(pendingIds(restored)).toEqual([]);
+    expect((await manifestOf(project)).resolved).toEqual([
+      'FIX-902',
+      'no-alert',
+      'no-console',
+      'no-debugger',
+    ]);
+    expect((await oxlintRules(project))['no-alert']).toBe('error');
+  });
+
+  it('leaves an addition pending in a pack whose items were all excluded', async () => {
+    const project = await projectOnV1({
+      packs: ['guards'],
+      exclude: ['FIX-901', 'no-console', 'no-debugger', 'quality-rules/no-sample-call'],
+    });
+    expect((await manifestOf(project)).resolved).toEqual([]);
+    await upgradeToV2(project);
+
+    const output = await sync(project);
+
+    expect(pendingIds(output)).toEqual(['FIX-902', 'no-alert']);
+    expect((await manifestOf(project)).resolved).toEqual([]);
+    expect((await oxlintRules(project))['no-alert']).toBe('off');
+  });
+
+  it('removes and reports a vanished rule that the manifest names only in include and options', async () => {
+    const project = await projectOnV1({
+      packs: ['talk'],
+      include: ['quality-rules/no-sample-call'],
+      options: { 'quality-rules/no-sample-call': { names: ['sample'] } },
+    });
+    expect((await manifestOf(project)).resolved).toEqual(['UX-901']);
+    await upgradeToV2(project);
+
+    const output = await sync(project);
+
+    expect(vanishedIds(output)).toEqual(['quality-rules/no-sample-call']);
+    expect(output).toContain('  - quality-rules/no-sample-call (from "include", "options")');
+    expect(output).toContain('Updated quality-rules.json (packages, resolved, include, options)');
+    const manifest = await manifestOf(project);
+    expect(manifest.include).toEqual([]);
+    expect(manifest.options).toEqual({});
+    expect((await project.cli('check')).exitCode).toBe(0);
+  });
+});
+
 describe('check after the upgrade', () => {
   it('reports the pending items and passes while the generated files match', async () => {
     const project = await projectOnV1({ packs: ['guards'] });
@@ -304,6 +439,21 @@ describe('check after the upgrade', () => {
     const result = await project.cli('check');
 
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain('"packages" in quality-rules.json');
+    expect(result.stderr).toContain('"resolved" in quality-rules.json is out of date');
+  });
+
+  it('fails while packages keeps the old version after the last pending items were excluded', async () => {
+    const project = await projectOnV1({ packs: ['guards'] });
+    await upgradeToV2(project);
+    await sync(project);
+    await project.writeManifest({
+      ...(await manifestOf(project)),
+      exclude: ['FIX-902', 'no-alert'],
+    });
+
+    const result = await project.cli('check');
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('"packages" in quality-rules.json is out of date');
   });
 });

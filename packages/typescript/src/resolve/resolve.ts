@@ -11,6 +11,21 @@ import {
   OPTIONS_PLACEHOLDER,
 } from '../catalog/load.ts';
 import type { Manifest } from '../manifest/manifest.ts';
+import {
+  type AcceptRequest,
+  acceptedVersions,
+  checkAccept,
+  type ItemState,
+  newItemTest,
+  type PendingItem,
+} from './pending.ts';
+import {
+  findVanished,
+  type KeptSelection,
+  packagesChanged,
+  type VanishedItem,
+  withoutVanished,
+} from './vanished.ts';
 
 /** A rule of a selected pack and whether it is in effect. */
 export interface ResolvedRule {
@@ -30,26 +45,6 @@ export interface ResolvedConvention {
   readonly pending: boolean;
 }
 
-/** A rule or convention that is pending, with the package and version that added it. */
-export interface PendingItem {
-  readonly id: string;
-  readonly package: string;
-  readonly added: string;
-}
-
-/** An ID that the manifest names but the installed packages no longer have. */
-export interface VanishedItem {
-  readonly id: string;
-  /** The manifest field that `sync` removes the ID from. */
-  readonly field: 'resolved' | 'exclude';
-}
-
-/** Which pending items to take in: those named by `--accept`, or all with `--accept-all`. */
-export interface AcceptRequest {
-  readonly ids: readonly string[];
-  readonly all: boolean;
-}
-
 const ACCEPT_NONE: AcceptRequest = { ids: [], all: false };
 
 /** What the manifest selects from the catalog. */
@@ -61,35 +56,32 @@ export interface Resolution {
   readonly conventions: readonly ResolvedConvention[];
   /** IDs of the rules and conventions in effect, sorted. This is the manifest's `resolved`. */
   readonly resolved: readonly string[];
-  /** Version of each installed package, by name. This is the manifest's `packages`. */
+  /**
+   * Version of each installed package whose additions have all been accepted or excluded, by
+   * name. This is the manifest's `packages`.
+   */
   readonly packages: Readonly<Record<string, string>>;
   /** The manifest's `exclude` without the IDs that the installed packages no longer have. */
   readonly exclude: readonly string[];
+  /** The manifest's `include` without the IDs that the installed packages no longer have. */
+  readonly include: readonly string[];
+  /** The manifest's `options` without the IDs that the installed packages no longer have. */
+  readonly options: Readonly<Record<string, Json>>;
   /** Rules and conventions that stay pending, sorted by ID. */
   readonly pending: readonly PendingItem[];
   /** IDs of the pending rules and conventions taken in by the accept request, sorted. */
   readonly accepted: readonly string[];
-  /** IDs removed from `resolved` and `exclude`, sorted by ID. */
+  /** IDs removed from the manifest, sorted by ID. */
   readonly vanished: readonly VanishedItem[];
   /** Things worth telling the user that do not stop the sync. */
   readonly notices: readonly string[];
 }
 
-/** The fields of a rule or convention that decide whether it is new since the last sync. */
-interface ItemOrigin {
-  readonly id: string;
-  readonly pack: string;
-  readonly package: string;
-  readonly added: string;
-}
-
-/** A rule or convention of the selected packs, with its state before accepting. */
-interface ItemState {
-  readonly item: ItemOrigin;
-  /** Excluded, or left out because a convention that it checks is excluded. */
-  readonly out: boolean;
-  /** New since the last sync: pending unless the accept request takes it in. */
-  readonly isNew: boolean;
+/** The rules and conventions of the installed packages, by ID. */
+interface CatalogIds {
+  readonly rules: ReadonlyMap<string, CatalogRule>;
+  readonly conventions: ReadonlyMap<string, CatalogConvention>;
+  readonly known: (id: string) => boolean;
 }
 
 /**
@@ -97,18 +89,19 @@ interface ItemState {
  *
  * - Every rule and convention of the selected packs is in effect, except the IDs in `exclude`.
  *   Excluding a convention also leaves out the rules that check it, unless they are in
- *   `include`.
+ *   `include`. Taking an ID out of `exclude` puts it back in effect at once.
  * - A rule or convention is pending, and not in effect, when its pack was taken at the last
- *   sync (some ID of the pack is in `resolved` or `exclude`), its package is in `packages`,
- *   and its ID is in neither `resolved` nor `exclude` (nor `include`, for a rule). The last
- *   sync put every item it saw into `resolved`, `exclude`, or among the rules of excluded
- *   conventions, so these are the items that a later version of the package added (their
- *   `added` is later than the version in `packages`). They stay pending on later syncs, after
- *   `packages` has the new version, until `accept` takes them in. A pack that is selected for
- *   the first time is taken whole, also when it is selected together with an upgrade.
- * - IDs in `resolved` that no installed package has are vanished. So are such IDs in `exclude`
- *   when a package of `packages` is gone or has another version; with the same versions they
- *   are mistakes in the manifest and are reported.
+ *   sync (some ID of the pack is in `resolved` or `exclude`), it was added in a later version
+ *   of its package than the one in `packages`, and it is in neither `resolved` nor `exclude`
+ *   (nor `include`, for a rule). It stays pending until `accept` takes it in or it is excluded.
+ *   `packages` names, for each package, the version whose additions have all been accepted or
+ *   excluded: it moves to the installed version once no item of the package stays pending.
+ *   A package that `packages` does not have yet (a first sync) has no pending items, and a
+ *   pack that is selected for the first time is taken whole, also together with an upgrade.
+ * - IDs that the manifest names and no installed package has are vanished and removed: always
+ *   from `resolved`, and from `exclude`, `include` and `options` when a package of `packages`
+ *   is gone or has another version; with the same versions they are mistakes in the manifest
+ *   and are reported.
  *
  * Throws a {@link QualityRulesError} when the manifest or `accept` names something unknown.
  */
@@ -120,29 +113,13 @@ export function resolve(
   const problems: string[] = [];
   const notices: string[] = [];
   const packs = selectPacks(catalog, manifest.packs, problems);
-  const rulesById = new Map(catalog.rules.map((rule) => [rule.id, rule]));
-  const conventionsById = new Map(catalog.conventions.map((item) => [item.id, item]));
-  const known = (id: string) => rulesById.has(id) || conventionsById.has(id);
-  const packages = installedVersions(catalog);
-
-  const vanished = findVanished(manifest, known, packagesChanged(manifest.packages, packages));
-  const removed = new Set(vanished.map((item) => item.id));
-  const exclude = manifest.exclude.filter((id) => !removed.has(id));
-  const excluded = new Set(exclude);
-  const included = new Set(manifest.include);
-  reportUnknown('exclude', exclude, known, problems);
-  reportUnknown('include', manifest.include, known, problems);
-  reportUnknown('options', Object.keys(manifest.options), known, problems);
-  for (const id of manifest.include) {
-    if (excluded.has(id)) {
-      problems.push(`${id} is in both "exclude" and "include"`);
-    }
-    if (conventionsById.has(id)) {
-      problems.push(
-        `"include" lists the convention ${id}; include takes back rules of excluded conventions, so remove ${id} from "exclude" instead`
-      );
-    }
-  }
+  const ids = catalogIds(catalog);
+  const installed = installedVersions(catalog);
+  const vanished = findVanished(manifest, ids.known, packagesChanged(manifest.packages, installed));
+  const kept = withoutVanished(manifest, vanished);
+  problems.push(...checkSelection(kept, ids));
+  const excluded = new Set(kept.exclude);
+  const included = new Set(kept.include);
 
   const isNew = newItemTest(packs, manifest, excluded);
   const packConventions = packs.flatMap((pack) => pack.conventions);
@@ -151,8 +128,8 @@ export function resolve(
       .filter((convention) => excluded.has(convention.id))
       .flatMap((convention) => convention.check)
   );
-  for (const id of manifest.include) {
-    if (rulesById.has(id) && !excludedChecks.has(id)) {
+  for (const id of kept.include) {
+    if (ids.rules.has(id) && !excludedChecks.has(id)) {
       notices.push(`"include" lists ${id}, but no excluded convention leaves it out`);
     }
   }
@@ -168,7 +145,7 @@ export function resolve(
     return { item: rule, out, isNew: !out && !included.has(rule.id) && isNew(rule) };
   });
   const states = [...ruleStates, ...conventionStates];
-  problems.push(...checkAccept(accept, states, excluded, known));
+  problems.push(...checkAccept(accept, states, excluded, ids.known));
   const takes = (state: ItemState) =>
     state.isNew && (accept.all || accept.ids.includes(state.item.id));
   const isPending = (state: ItemState) => state.isNew && !takes(state);
@@ -183,19 +160,10 @@ export function resolve(
   );
   const rules = ruleStates.map((state, index): ResolvedRule => {
     const rule = packRules[index] as CatalogRule;
-    const override = Object.hasOwn(manifest.options, rule.id)
-      ? manifest.options[rule.id]
-      : undefined;
-    const options = applyOptions(rule, override, problems);
+    const options = applyOptions(rule, optionsFor(kept, rule.id), problems);
     return { rule, active: isActive(state), pending: isPending(state), options };
   });
-  for (const id of Object.keys(manifest.options)) {
-    if (conventionsById.has(id)) {
-      problems.push(`"options" has an entry for the convention ${id}; only rules take options`);
-    } else if (rulesById.has(id) && !selectedRules.has(id)) {
-      notices.push(`"options" for ${id} is not used, because no selected pack has the rule`);
-    }
-  }
+  checkOptionTargets(kept, ids, selectedRules, { problems, notices });
   if (problems.length > 0) {
     throw new QualityRulesError(`The manifest does not match the packs:\n${listLines(problems)}`);
   }
@@ -214,13 +182,21 @@ export function resolve(
     rules,
     conventions,
     resolved: idsOf(isActive),
-    packages,
-    exclude,
+    packages: acceptedVersions(installed, manifest.packages, pending),
+    exclude: kept.exclude,
+    include: kept.include,
+    options: kept.options,
     pending,
     accepted: idsOf(takes),
     vanished,
     notices,
   };
+}
+
+function catalogIds(catalog: Catalog): CatalogIds {
+  const rules = new Map(catalog.rules.map((rule) => [rule.id, rule]));
+  const conventions = new Map(catalog.conventions.map((item) => [item.id, item]));
+  return { rules, conventions, known: (id) => rules.has(id) || conventions.has(id) };
 }
 
 /** Version of each installed package, by name, sorted by name. */
@@ -232,89 +208,50 @@ function installedVersions(catalog: Catalog): Record<string, string> {
   );
 }
 
-/** Whether a package of the last sync is gone or has another version now. */
-function packagesChanged(
-  synced: Readonly<Record<string, string>>,
-  installed: Readonly<Record<string, string>>
-): boolean {
-  return Object.entries(synced).some(([name, version]) => installed[name] !== version);
-}
-
-/**
- * IDs in `resolved` that no installed package has, and such IDs in `exclude` when the
- * packages changed since the last sync. Without a change, an unknown ID in `exclude` is a
- * mistake in the manifest, which {@link reportUnknown} reports.
- */
-function findVanished(
-  manifest: Manifest,
-  known: (id: string) => boolean,
-  changed: boolean
-): VanishedItem[] {
-  const fromResolved = manifest.resolved
-    .filter((id) => !known(id))
-    .map((id): VanishedItem => ({ id, field: 'resolved' }));
-  const fromExclude = (changed ? manifest.exclude : [])
-    .filter((id) => !known(id))
-    .map((id): VanishedItem => ({ id, field: 'exclude' }));
-  return [...fromResolved, ...fromExclude].sort(
-    (a, b) => compareIds(a.id, b.id) || a.field.localeCompare(b.field)
-  );
-}
-
-/**
- * Returns the test for "new since the last sync": the item's pack was taken at the last sync,
- * its package was synced before, and its ID is in neither `resolved` nor `exclude`.
- */
-function newItemTest(
-  packs: readonly CatalogPack[],
-  manifest: Manifest,
-  excluded: ReadonlySet<string>
-): (item: ItemOrigin) => boolean {
-  const previous = new Set(manifest.resolved);
-  const seen = (id: string) => previous.has(id) || excluded.has(id);
-  // With nothing in `resolved` this is a first sync: IDs in `exclude` alone do not show that a
-  // pack was taken before, so a pack chosen now has no pending items.
-  const takenBefore = new Set(
-    previous.size === 0
-      ? []
-      : packs
-          .filter((pack) => [...pack.rules, ...pack.conventions].some((item) => seen(item.id)))
-          .map((pack) => pack.name)
-  );
-  return (item) =>
-    takenBefore.has(item.pack) && Object.hasOwn(manifest.packages, item.package) && !seen(item.id);
-}
-
-/** Problems with the IDs that `--accept` names: each must be pending. */
-function checkAccept(
-  accept: AcceptRequest,
-  states: readonly ItemState[],
-  excluded: ReadonlySet<string>,
-  known: (id: string) => boolean
-): string[] {
-  const pendingIds = states
-    .filter((state) => state.isNew)
-    .map((state) => state.item.id)
-    .sort(compareIds);
-  const pendingList = pendingIds.length === 0 ? 'none' : pendingIds.join(', ');
+/** Problems with the IDs that `exclude`, `include` and `options` name. */
+function checkSelection(kept: KeptSelection, ids: CatalogIds): string[] {
   const problems: string[] = [];
-  for (const id of new Set(accept.ids)) {
-    if (pendingIds.includes(id)) {
-      continue;
+  reportUnknown('exclude', kept.exclude, ids.known, problems);
+  reportUnknown('include', kept.include, ids.known, problems);
+  reportUnknown('options', Object.keys(kept.options), ids.known, problems);
+  const excluded = new Set(kept.exclude);
+  for (const id of kept.include) {
+    if (excluded.has(id)) {
+      problems.push(`${id} is in both "exclude" and "include"`);
     }
-    if (!known(id)) {
-      problems.push(`--accept names ${id}, which is no rule or convention of the installed packs`);
-    } else if (excluded.has(id)) {
+    if (ids.conventions.has(id)) {
       problems.push(
-        `--accept names ${id}, but ${id} is in "exclude"; remove it from "exclude" first to take it back`
+        `"include" lists the convention ${id}; include takes back rules of excluded conventions, so remove ${id} from "exclude" instead`
       );
-    } else if (!states.some((state) => state.item.id === id)) {
-      problems.push(`--accept names ${id}, which is in no selected pack`);
-    } else {
-      problems.push(`--accept names ${id}, but ${id} is not pending (pending: ${pendingList})`);
     }
   }
   return problems;
+}
+
+/** The manifest's options for a rule, or `undefined` when it has none. */
+function optionsFor(kept: KeptSelection, id: string): Json | undefined {
+  if (!Object.hasOwn(kept.options, id)) {
+    return undefined;
+  }
+  return kept.options[id];
+}
+
+/** Reports the `options` entries for conventions and for rules of packs that are not selected. */
+function checkOptionTargets(
+  kept: KeptSelection,
+  ids: CatalogIds,
+  selectedRules: ReadonlySet<string>,
+  report: { readonly problems: string[]; readonly notices: string[] }
+): void {
+  for (const id of Object.keys(kept.options)) {
+    if (ids.conventions.has(id)) {
+      report.problems.push(
+        `"options" has an entry for the convention ${id}; only rules take options`
+      );
+    } else if (ids.rules.has(id) && !selectedRules.has(id)) {
+      report.notices.push(`"options" for ${id} is not used, because no selected pack has the rule`);
+    }
+  }
 }
 
 function selectPacks(

@@ -13,8 +13,8 @@ import {
 
 /**
  * `quality-rules check`: fails when the generated files of the manifest's toolchain or the
- * manifest's `packages` and `resolved` differ from what `sync` would write now. Pending rules and conventions are
- * listed but do not fail the check. Writes nothing. Meant for CI.
+ * manifest's `packages` and `resolved` differ from what `sync` would write now. Pending rules
+ * and conventions are listed but do not fail the check. Writes nothing. Meant for CI.
  */
 export const checkCommand: CommandSpec = {
   summary: 'Fail when the generated files differ from what sync would write (for CI)',
@@ -39,7 +39,7 @@ export const checkCommand: CommandSpec = {
       problems.push(`"resolved" in ${MANIFEST_FILE} is out of date`);
     }
     if (!sameJson(raw.packages, plan.resolution.packages)) {
-      problems.push(`"packages" in ${MANIFEST_FILE} does not match the installed versions`);
+      problems.push(`"packages" in ${MANIFEST_FILE} is out of date`);
     }
 
     reportUnknownFiles(plan, io);

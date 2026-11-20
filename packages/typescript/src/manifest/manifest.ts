@@ -169,18 +169,24 @@ export interface ManifestUpdate {
   readonly resolved: readonly string[];
   /** `exclude` without the IDs that the installed packages no longer have. */
   readonly exclude: readonly string[];
+  /** `include` without the IDs that the installed packages no longer have. */
+  readonly include: readonly string[];
+  /** `options` without the IDs that the installed packages no longer have. */
+  readonly options: Readonly<Record<string, Json>>;
 }
 
 /**
- * Returns the manifest's content with `packages` and `resolved` replaced, and `exclude` when
- * IDs were removed from it. Other fields keep their values and order; `packages` and
- * `resolved` are added at the end when the file has none.
+ * Returns the manifest's content with `packages` and `resolved` replaced, and `exclude`,
+ * `include` and `options` when IDs were removed from them. Other fields keep their values and
+ * order; `packages` and `resolved` are added at the end when the file has none.
  */
 export function updateManifest(manifest: Manifest, update: ManifestUpdate): JsonObject {
-  const excludeChanged = update.exclude.length !== manifest.exclude.length;
+  const removedFrom = new Set(fieldsWithRemovedIds(manifest, update));
   return {
     ...manifest.raw,
-    ...(excludeChanged ? { exclude: update.exclude } : {}),
+    ...(removedFrom.has('exclude') ? { exclude: update.exclude } : {}),
+    ...(removedFrom.has('include') ? { include: update.include } : {}),
+    ...(removedFrom.has('options') ? { options: update.options as JsonObject } : {}),
     packages: update.packages,
     resolved: update.resolved,
   };
@@ -188,9 +194,15 @@ export function updateManifest(manifest: Manifest, update: ManifestUpdate): Json
 
 /** Names of the fields that {@link updateManifest} changes, for the output of `sync`. */
 export function updatedFields(manifest: Manifest, update: ManifestUpdate): string[] {
-  return [
-    'packages',
-    'resolved',
-    ...(update.exclude.length === manifest.exclude.length ? [] : ['exclude']),
-  ];
+  return ['packages', 'resolved', ...fieldsWithRemovedIds(manifest, update)];
+}
+
+/** The fields that the project writes and `sync` removed IDs from. */
+function fieldsWithRemovedIds(manifest: Manifest, update: ManifestUpdate): string[] {
+  const changed = [
+    ['exclude', update.exclude.length !== manifest.exclude.length],
+    ['include', update.include.length !== manifest.include.length],
+    ['options', Object.keys(update.options).length !== Object.keys(manifest.options).length],
+  ] as const;
+  return changed.filter(([, removed]) => removed).map(([field]) => field);
 }

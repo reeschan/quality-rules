@@ -20,7 +20,8 @@ import {
   updatedFields,
   updateManifest,
 } from '../../manifest/manifest.ts';
-import { type AcceptRequest, type Resolution, resolve } from '../../resolve/resolve.ts';
+import type { AcceptRequest } from '../../resolve/pending.ts';
+import { type Resolution, resolve } from '../../resolve/resolve.ts';
 import type { CommandIo, CommandSpec, OptionValues } from '../main.ts';
 
 /** Everything `sync` would write, worked out without writing anything. */
@@ -31,7 +32,7 @@ export interface SyncPlan {
   readonly files: readonly GeneratedFile[];
   /** The fields of the manifest that `sync` writes, as they are after this sync. */
   readonly manifestUpdate: ManifestUpdate;
-  /** The manifest's text with `packages`, `resolved` and `exclude` brought up to date. */
+  /** The manifest's text with the fields that `sync` writes brought up to date. */
   readonly manifestText: string;
   /** The toolchain that the generated files are for. */
   readonly toolchain: Toolchain;
@@ -63,6 +64,8 @@ export async function planSync(projectDir: string, accept?: AcceptRequest): Prom
     packages: resolution.packages,
     resolved: resolution.resolved,
     exclude: resolution.exclude,
+    include: resolution.include,
+    options: resolution.options,
   };
   const manifestText = formatJson(updateManifest(manifest, manifestUpdate), style);
   const leftFiles = await findUnknownFiles(projectDir, files);
@@ -167,7 +170,10 @@ export function reportPending(resolution: Resolution, io: CommandIo): void {
   );
 }
 
-/** Lists the IDs that `sync` removes from the manifest because no installed package has them. */
+/**
+ * Lists every ID that `sync` removes from the manifest because no installed package has it,
+ * with the fields it is removed from.
+ */
 function reportVanished(resolution: Resolution, io: CommandIo): void {
   if (resolution.vanished.length === 0) {
     return;
@@ -175,7 +181,9 @@ function reportVanished(resolution: Resolution, io: CommandIo): void {
   io.out(
     [
       `Removed from ${MANIFEST_FILE}, because the installed packages no longer have them:`,
-      ...resolution.vanished.map((item) => `  - ${item.id} (from "${item.field}")`),
+      ...resolution.vanished.map(
+        (item) => `  - ${item.id} (from ${item.fields.map((field) => `"${field}"`).join(', ')})`
+      ),
       '',
     ].join('\n')
   );
@@ -192,8 +200,10 @@ function acceptRequest(values: OptionValues): AcceptRequest {
 
 /**
  * `quality-rules sync`: rebuilds the generated files and the manifest's `packages` and
- * `resolved`, removes vanished IDs from `resolved` and `exclude`, and takes in the pending
- * rules and conventions named by `--accept` (or all of them with `--accept-all`).
+ * `resolved`, removes vanished IDs from `resolved`, `exclude`, `include` and `options`, and
+ * takes in the pending rules and conventions named by `--accept` (or all of them with
+ * `--accept-all`). `packages` moves to the installed version of a package once none of its
+ * items stays pending.
  */
 export const syncCommand: CommandSpec = {
   summary: 'Rebuild the generated files from quality-rules.json and the installed packages',

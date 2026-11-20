@@ -1,0 +1,36 @@
+stateDiagram-v2
+    state Project {
+        state Rule {
+            R_none: NotInPackage
+            R_on: Active
+            R_pending: Pending
+            R_off: Excluded
+            R_gone: Removed
+            [*] --> R_none
+            R_none --> R_on: adopt pack
+            R_none --> R_pending: upgrade adds rule
+            R_pending --> R_on: accept and sync
+            R_pending --> R_off: decide to exclude
+            R_on --> R_off: exclude in manifest
+            R_off --> R_on: include again
+            R_on --> R_gone: upgrade removes rule
+            R_pending --> R_gone: upgrade removes rule
+            R_off --> R_gone: upgrade removes rule
+        }
+        --
+        state Generated {
+            G_out: NotGenerated
+            G_in: Generated
+            [*] --> G_out
+            G_out --> G_in: accept and sync [if pending]
+            %% when R_pending
+            G_out --> G_in: sync [if active]
+            %% when R_on
+            G_in --> G_out: sync [if not active]
+            %% when not R_on
+            G_in --> G_out: upgrade removes rule
+        }
+    }
+
+    %% never PendingSilent: Pending & Generated -- 保留中のルールが lint で指摘を出す
+    %% never GoneLingers: Removed & Generated -- パッケージから消えたルールが、生成物に残って指摘を出す

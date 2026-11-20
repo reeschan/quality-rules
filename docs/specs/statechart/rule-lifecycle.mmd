@@ -1,0 +1,36 @@
+stateDiagram-v2
+    state Project {
+        state Rule {
+            R_none: パッケージに無い
+            R_on: 有効
+            R_pending: 保留中
+            R_off: 外した
+            R_gone: 消えた
+            [*] --> R_none
+            R_none --> R_on: 束を選んで初めて取り入れた
+            R_none --> R_pending: 版を上げたら束に増えていた
+            R_pending --> R_on: 受け入れて同期した
+            R_pending --> R_off: 外すと決めた
+            R_on --> R_off: マニフェストで外した
+            R_off --> R_on: 改めて入れた
+            R_on --> R_gone: 版を上げたら無くなっていた
+            R_pending --> R_gone: 版を上げたら無くなっていた
+            R_off --> R_gone: 版を上げたら無くなっていた
+        }
+        --
+        state Generated {
+            G_out: 生成物に入っていない
+            G_in: 生成物に入っている
+            [*] --> G_out
+            G_out --> G_in: 受け入れて同期した [保留中なら]
+            %% when R_pending
+            G_out --> G_in: 同期した [有効なら]
+            %% when R_on
+            G_in --> G_out: 同期した [有効でなければ]
+            %% when not R_on
+            G_in --> G_out: 版を上げたら無くなっていた
+        }
+    }
+
+    %% never PendingSilent: 保留中 & 生成物に入っている -- 保留中のルールが lint で指摘を出す
+    %% never GoneLingers: 消えた & 生成物に入っている -- パッケージから消えたルールが、生成物に残って指摘を出す

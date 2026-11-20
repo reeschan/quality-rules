@@ -73,8 +73,11 @@
     {
       "id": "quality-rules/no-disable-comments",
       "tool": "oxlint",
-      "description": "Disallow comments that suppress eslint, oxlint or biome diagnostics",
+      "description": "Disallow comments that suppress eslint, oxlint or biome diagnostics. `quality-rules suppressions` also finds them in the source files of the folders in dirs, because a directive that names no rule silences this rule too",
       "added": "0.1.0",
+      "options": {
+        "dirs": ["src"]
+      },
       "config": {
         "oxlint": {
           "rules": {

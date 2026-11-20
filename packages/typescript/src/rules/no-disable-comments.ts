@@ -1,12 +1,5 @@
 import type { Rule } from 'eslint';
-
-/**
- * Matches the start of a comment that suppresses eslint, oxlint or biome diagnostics.
- * A directive must be followed by whitespace or the end of the comment, so words such as
- * `eslint-disablement` in ordinary prose do not match.
- */
-const SUPPRESSION_DIRECTIVE =
-  /^(?<directive>eslint-disable(?:-next-line|-line)?|oxlint-disable(?:-next-line|-line)?|biome-ignore(?:-all|-start)?)(?=\s|$)/;
+import { suppressionDirectiveOf } from './suppression-directive.ts';
 
 /**
  * Reports every lint suppression comment, so that exceptions are written in the lint
@@ -29,15 +22,14 @@ export const noDisableComments: Rule.RuleModule = {
     return {
       Program() {
         for (const comment of sourceCode.getAllComments()) {
-          const directive = SUPPRESSION_DIRECTIVE.exec(comment.value.trimStart())?.groups
-            ?.directive;
-          if (directive === undefined || comment.loc == null) {
+          const directive = suppressionDirectiveOf(comment.value);
+          if (directive === undefined || !directive.suppresses || comment.loc == null) {
             continue;
           }
           context.report({
             loc: comment.loc,
             messageId: 'noDisableComment',
-            data: { directive },
+            data: { directive: directive.name },
           });
         }
       },

@@ -1,9 +1,17 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { QualityRulesError } from '../../catalog/conventions.ts';
 import { isObject, loadCatalog } from '../../catalog/load.ts';
 import { readManifest } from '../../manifest/manifest.ts';
 import { resolve } from '../../resolve/resolve.ts';
+import { stripComments } from '../../source/comments.ts';
+import {
+  existingDirs,
+  filesUnder,
+  isDirectory,
+  isInside,
+  SOURCE_FILE,
+} from '../../source/files.ts';
 import type { CommandIo, CommandSpec } from '../main.ts';
 
 /** ID of the rule that this command checks, in `packs/unit-tests.json`. */
@@ -28,7 +36,6 @@ interface Aliases {
   readonly baseUrl: string | undefined;
 }
 
-const SOURCE_FILE = /\.(?:[cm]?[jt]s|[jt]sx)$/;
 const DECLARATION_FILE = /\.d\.[cm]?ts$/;
 const TEST_FILE = /\.(?:test|spec)\.(?:[cm]?[jt]s|[jt]sx)$/;
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'];
@@ -104,50 +111,9 @@ function isFolderList(value: unknown): value is string[] {
   );
 }
 
-function isInside(cwd: string, absolute: string): boolean {
-  const relative = path.relative(cwd, absolute);
-  return !(relative.startsWith('..') || path.isAbsolute(relative));
-}
-
-async function isDirectory(absolute: string): Promise<boolean> {
-  const info = await stat(absolute).catch(() => undefined);
-  return info?.isDirectory() === true;
-}
-
 async function isFile(absolute: string): Promise<boolean> {
   const info = await stat(absolute).catch(() => undefined);
   return info?.isFile() === true;
-}
-
-/** The folders to check as absolute paths. Throws when one is missing or outside the project. */
-async function existingDirs(cwd: string, dirs: readonly string[]): Promise<string[]> {
-  const found: string[] = [];
-  for (const dir of dirs) {
-    const absolute = path.resolve(cwd, dir);
-    if (!isInside(cwd, absolute)) {
-      throw new QualityRulesError(`The folder "${dir}" in "dirs" is outside the project`);
-    }
-    if (!(await isDirectory(absolute))) {
-      throw new QualityRulesError(`The folder "${dir}" in "dirs" does not exist`);
-    }
-    found.push(absolute);
-  }
-  return found;
-}
-
-/** Every file under the folder, without descending into `node_modules` and `.git`. */
-async function filesUnder(dir: string): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const nested = await Promise.all(
-    entries.map(async (entry): Promise<string[]> => {
-      const absolute = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        return entry.name === 'node_modules' || entry.name === '.git' ? [] : filesUnder(absolute);
-      }
-      return entry.isFile() ? [absolute] : [];
-    })
-  );
-  return nested.flat();
 }
 
 /** Source files of the folders that need a unit test: not the tests, not declaration files. */
@@ -169,40 +135,6 @@ async function testFilesIn(cwd: string, testDirs: readonly string[]): Promise<st
     }
   }
   return [...new Set(found)].filter((file) => TEST_FILE.test(file));
-}
-
-/**
- * Removes the comments from source code and keeps the strings, so that an import written in a
- * comment is not read as an import.
- */
-function stripComments(code: string): string {
-  let result = '';
-  let index = 0;
-  while (index < code.length) {
-    const char = code.charAt(index);
-    const next = code.charAt(index + 1);
-    if (char === '/' && next === '/') {
-      while (index < code.length && code.charAt(index) !== '\n') {
-        index += 1;
-      }
-    } else if (char === '/' && next === '*') {
-      const end = code.indexOf('*/', index + 2);
-      index = end === -1 ? code.length : end + 2;
-      result += ' ';
-    } else if (char === '"' || char === "'" || char === '`') {
-      const start = index;
-      index += 1;
-      while (index < code.length && code.charAt(index) !== char) {
-        index += code.charAt(index) === '\\' ? 2 : 1;
-      }
-      index += 1;
-      result += code.slice(start, index);
-    } else {
-      result += char;
-      index += 1;
-    }
-  }
-  return result;
 }
 
 const IMPORT_PATTERNS = [

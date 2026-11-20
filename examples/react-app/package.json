@@ -8,7 +8,8 @@
   "scripts": {
     "typecheck": "tsc --project tsconfig.json",
     "test": "vitest run",
-    "check": "quality-rules sync && quality-rules check && biome check . && oxlint && knip && depcruise src --config .dependency-cruiser.cjs && quality-rules duplication && quality-rules unit-tests"
+    "sync": "quality-rules sync",
+    "check": "quality-rules check && quality-rules suppressions && biome check . && oxlint && knip && depcruise src --config .dependency-cruiser.cjs && quality-rules duplication && quality-rules unit-tests"
   },
   "dependencies": {
     "react": "^19.3.1",

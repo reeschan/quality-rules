@@ -5,6 +5,7 @@ import { QualityRulesError } from '../catalog/conventions.ts';
 import { checkCommand } from './commands/check.ts';
 import { duplicationCommand } from './commands/duplication.ts';
 import { listCommand } from './commands/list.ts';
+import { suppressionsCommand } from './commands/suppressions.ts';
 import { syncCommand } from './commands/sync.ts';
 import { unitTestsCommand } from './commands/unit-tests.ts';
 
@@ -45,6 +46,7 @@ const COMMANDS: Readonly<Record<string, CommandSpec>> = {
   check: checkCommand,
   duplication: duplicationCommand,
   'unit-tests': unitTestsCommand,
+  suppressions: suppressionsCommand,
 };
 
 const COMMON_OPTIONS: Readonly<Record<string, OptionSpec>> = {

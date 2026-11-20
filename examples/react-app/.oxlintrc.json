@@ -1,0 +1,7 @@
+{
+  "extends": ["./quality-rules/oxlint.json"],
+  "ignorePatterns": ["quality-rules/**"],
+  "rules": {
+    "eqeqeq": "error"
+  }
+}

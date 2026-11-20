@@ -1,0 +1,44 @@
+{
+  "description": "Sample guards against leftover debugging code",
+  "rules": [
+    {
+      "id": "no-console",
+      "tool": "oxlint",
+      "description": "Disallow console calls",
+      "added": "1.0.0",
+      "config": {
+        "oxlint": {
+          "rules": {
+            "no-console": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "no-debugger",
+      "tool": "oxlint",
+      "description": "Disallow debugger statements",
+      "added": "1.0.0",
+      "config": {
+        "oxlint": {
+          "rules": {
+            "no-debugger": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "no-alert",
+      "tool": "oxlint",
+      "description": "Disallow alert, confirm and prompt",
+      "added": "2.0.0",
+      "config": {
+        "oxlint": {
+          "rules": {
+            "no-alert": "error"
+          }
+        }
+      }
+    }
+  ]
+}

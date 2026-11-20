@@ -1,0 +1,62 @@
+{
+  "plugins": ["import"],
+  "jsPlugins": ["./oxlint-plugin.mjs"],
+  "rules": {
+    "quality-rules/no-props-destructuring": "error",
+    "quality-rules/no-scientific-literal": [
+      "error",
+      {
+        "allowFiles": []
+      }
+    ],
+    "quality-rules/no-range-bound-comparison": [
+      "error",
+      {
+        "allowFiles": []
+      }
+    ],
+    "no-ternary": "error",
+    "no-warning-comments": [
+      "error",
+      {
+        "terms": ["todo", "fixme", "xxx", "hack"],
+        "location": "anywhere"
+      }
+    ],
+    "import/no-relative-parent-imports": "error",
+    "quality-rules/no-disable-comments": "error",
+    "quality-rules/no-boolean-argument": [
+      "error",
+      {
+        "allowFunctions": [],
+        "allowNamePatterns": []
+      }
+    ],
+    "max-lines-per-function": [
+      "error",
+      {
+        "max": 100,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "max-lines": [
+      "error",
+      {
+        "max": 400
+      }
+    ],
+    "max-params": [
+      "error",
+      {
+        "max": 4
+      }
+    ],
+    "max-depth": [
+      "error",
+      {
+        "max": 4
+      }
+    ]
+  }
+}

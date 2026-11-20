@@ -1,0 +1,31 @@
+{
+  "name": "@quality-rules/example-react-app",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A small React project that takes the quality-rules packs, as a sample and as the end-to-end check of the packages",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "vitest run",
+    "sync": "quality-rules sync",
+    "check": "quality-rules check && quality-rules suppressions && biome check . && oxlint && knip && depcruise src --config .dependency-cruiser.cjs && quality-rules duplication && quality-rules unit-tests"
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.8",
+    "@reeschan/quality-rules-react": "workspace:*",
+    "@reeschan/quality-rules-typescript": "workspace:*",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "dependency-cruiser": "^18.8.0",
+    "knip": "^6.46.1",
+    "oxlint": "^1.94.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.1"
+  }
+}

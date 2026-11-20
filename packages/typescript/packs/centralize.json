@@ -1,0 +1,47 @@
+{
+  "description": "Keep small scientific-notation values and range bound comparisons in the allowed files",
+  "rules": [
+    {
+      "id": "quality-rules/no-scientific-literal",
+      "tool": "oxlint",
+      "description": "Disallow numeric literals in scientific notation outside the allowed files",
+      "added": "0.1.0",
+      "options": {
+        "allowFiles": []
+      },
+      "config": {
+        "oxlint": {
+          "rules": {
+            "quality-rules/no-scientific-literal": ["error", "{{options}}"]
+          }
+        },
+        "eslint": {
+          "rules": {
+            "quality-rules/no-scientific-literal": ["error", "{{options}}"]
+          }
+        }
+      }
+    },
+    {
+      "id": "quality-rules/no-range-bound-comparison",
+      "tool": "oxlint",
+      "description": "Disallow comparing the min and max of two ranges outside the allowed files",
+      "added": "0.1.0",
+      "options": {
+        "allowFiles": []
+      },
+      "config": {
+        "oxlint": {
+          "rules": {
+            "quality-rules/no-range-bound-comparison": ["error", "{{options}}"]
+          }
+        },
+        "eslint": {
+          "rules": {
+            "quality-rules/no-range-bound-comparison": ["error", "{{options}}"]
+          }
+        }
+      }
+    }
+  ]
+}

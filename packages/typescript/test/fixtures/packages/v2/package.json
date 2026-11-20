@@ -1,0 +1,14 @@
+{
+  "name": "@example/quality-rules-sample",
+  "version": "2.0.0",
+  "description": "Sample package for the CLI tests, version 2: guards gains no-alert and FIX-902 and loses quality-rules/no-sample-call and FIX-901; talk gains UX-902",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "qualityRules": {
+    "packs": "packs",
+    "conventions": "conventions"
+  }
+}

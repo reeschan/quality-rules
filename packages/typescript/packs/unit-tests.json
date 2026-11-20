@@ -1,0 +1,16 @@
+{
+  "description": "Every file of the chosen folders is imported by a unit test, checked by `quality-rules unit-tests`",
+  "rules": [
+    {
+      "id": "unit-tests/imported-by-tests",
+      "tool": "unit-tests",
+      "description": "Every file of the chosen folders is imported by at least one unit test (a *.test.* or *.spec.* file in the test folders). Set the folders in dirs, the test folders in testDirs and the tsconfig that holds the path aliases in tsconfig",
+      "added": "0.1.0",
+      "options": {
+        "dirs": ["src"],
+        "testDirs": ["test", "tests"],
+        "tsconfig": "tsconfig.json"
+      }
+    }
+  ]
+}

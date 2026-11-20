@@ -1,0 +1,79 @@
+{
+  "forbidden": [
+    {
+      "name": "dependency-cruiser/layer-order:features",
+      "comment": "The layer features (src/features) must not import from the layers above it: app",
+      "severity": "error",
+      "from": {
+        "path": "^(?:src/features)/"
+      },
+      "to": {
+        "path": "^(?:src/app)/"
+      }
+    },
+    {
+      "name": "dependency-cruiser/layer-order:domain",
+      "comment": "The layer domain (src/domain) must not import from the layers above it: app, features",
+      "severity": "error",
+      "from": {
+        "path": "^(?:src/domain)/"
+      },
+      "to": {
+        "path": "^(?:src/app|src/features)/"
+      }
+    },
+    {
+      "name": "dependency-cruiser/closed-modules:src/features/*",
+      "comment": "Code outside src/features/* imports only its public files: index.ts",
+      "severity": "error",
+      "from": {
+        "pathNot": "^src/features/[^/]+/"
+      },
+      "to": {
+        "path": "^src/features/[^/]+/",
+        "pathNot": "^src/features/[^/]+/(?:index\\.ts)$"
+      }
+    },
+    {
+      "name": "dependency-cruiser/closed-modules:src/features/*:from-another-module",
+      "comment": "Code in one module of src/features/* imports only the public files of another: index.ts",
+      "severity": "error",
+      "from": {
+        "path": "^(src/features/[^/]+)/"
+      },
+      "to": {
+        "path": "^src/features/[^/]+/",
+        "pathNot": "^(?:$1/|src/features/[^/]+/(?:index\\.ts)$)"
+      }
+    },
+    {
+      "name": "dependency-cruiser/no-circular",
+      "comment": "Modules must not import each other in a cycle",
+      "severity": "error",
+      "from": {},
+      "to": {
+        "circular": true,
+        "viaOnly": {
+          "dependencyTypesNot": ["type-only"]
+        }
+      }
+    },
+    {
+      "name": "dependency-cruiser/no-ui-in-pure-layer",
+      "comment": "The layers of pure computation (domain) must not import UI libraries: react, react-dom, react-native, preact, vue, svelte, solid-js, @angular/core",
+      "severity": "error",
+      "from": {
+        "path": "^(?:src/domain)/"
+      },
+      "to": {
+        "path": "(?:^|(?:^|/)node_modules/)(?:react|react-dom|react-native|preact|vue|svelte|solid-js|@angular/core)(?:/|$)"
+      }
+    }
+  ],
+  "options": {
+    "doNotFollow": {
+      "path": ["node_modules"]
+    },
+    "tsPreCompilationDeps": true
+  }
+}

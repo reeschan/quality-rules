@@ -1,0 +1,69 @@
+{
+  "description": "Dependency direction checked by dependency-cruiser: layer order, closed modules, no import cycles and no UI library in the layers of pure computation",
+  "rules": [
+    {
+      "id": "dependency-cruiser/layer-order",
+      "tool": "dependency-cruiser",
+      "description": "A layer imports only from the layers below it. List the layers from top to bottom in options, each with a name and a folder",
+      "added": "0.1.0",
+      "options": {
+        "layers": []
+      },
+      "config": {
+        "dependency-cruiser": {
+          "check": "layer-order"
+        }
+      }
+    },
+    {
+      "id": "dependency-cruiser/closed-modules",
+      "tool": "dependency-cruiser",
+      "description": "Code outside a closed module imports only its public files. List the module folders in options (* stands for each folder at that place) and the public files, relative to the module folder",
+      "added": "0.1.0",
+      "options": {
+        "modules": [],
+        "public": ["index.ts"]
+      },
+      "config": {
+        "dependency-cruiser": {
+          "check": "closed-modules"
+        }
+      }
+    },
+    {
+      "id": "dependency-cruiser/no-circular",
+      "tool": "dependency-cruiser",
+      "description": "Disallow import cycles (cycles made only of type imports are allowed)",
+      "added": "0.1.0",
+      "config": {
+        "dependency-cruiser": {
+          "check": "no-circular"
+        }
+      }
+    },
+    {
+      "id": "dependency-cruiser/no-ui-in-pure-layer",
+      "tool": "dependency-cruiser",
+      "description": "The layers of pure computation do not import UI libraries. Name the layers (from the options of dependency-cruiser/layer-order) in options",
+      "added": "0.1.0",
+      "options": {
+        "layers": [],
+        "uiLibraries": [
+          "react",
+          "react-dom",
+          "react-native",
+          "preact",
+          "vue",
+          "svelte",
+          "solid-js",
+          "@angular/core"
+        ]
+      },
+      "config": {
+        "dependency-cruiser": {
+          "check": "no-ui-in-pure-layer"
+        }
+      }
+    }
+  ]
+}

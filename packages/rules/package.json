@@ -1,0 +1,11 @@
+{
+  "name": "@reeschan/quality-rules-common",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Conventions of the common layer (prose only, no example code). Not published on its own: the language packages bundle them with their examples.",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "conventions"
+  ]
+}

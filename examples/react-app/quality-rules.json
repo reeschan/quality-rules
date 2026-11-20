@@ -1,0 +1,146 @@
+{
+  "packages": {
+    "@reeschan/quality-rules-react": "0.1.0",
+    "@reeschan/quality-rules-typescript": "0.1.0"
+  },
+  "packs": [
+    "baseline",
+    "size-limits",
+    "lint-hygiene",
+    "centralize",
+    "naming",
+    "unused-code",
+    "structure",
+    "duplication",
+    "unit-tests",
+    "react",
+    "comments",
+    "concern",
+    "generality",
+    "reuse",
+    "root-cause",
+    "types",
+    "ux",
+    "e2e"
+  ],
+  "exclude": [],
+  "include": [],
+  "options": {
+    "dependency-cruiser/layer-order": {
+      "layers": [
+        {
+          "name": "app",
+          "path": "src/app"
+        },
+        {
+          "name": "features",
+          "path": "src/features"
+        },
+        {
+          "name": "domain",
+          "path": "src/domain"
+        }
+      ]
+    },
+    "dependency-cruiser/closed-modules": {
+      "modules": ["src/features/*"],
+      "public": ["index.ts"]
+    },
+    "dependency-cruiser/no-ui-in-pure-layer": {
+      "layers": ["domain"]
+    },
+    "unit-tests/imported-by-tests": {
+      "dirs": ["src/domain"]
+    },
+    "jscpd/changed-lines-duplication": {
+      "baseBranch": "main",
+      "dirs": ["src"]
+    }
+  },
+  "local": {
+    "prefix": "PROJ",
+    "dir": "docs/conventions"
+  },
+  "resolved": [
+    "biome/formatter",
+    "biome/noAriaHiddenOnFocusable",
+    "biome/noArrayIndexKey",
+    "biome/noChildrenProp",
+    "biome/noCommentText",
+    "biome/noConsole",
+    "biome/noDoubleEquals",
+    "biome/noDuplicateJsxProps",
+    "biome/noExplicitAny",
+    "biome/noNestedTernary",
+    "biome/noParameterAssign",
+    "biome/noRedundantRoles",
+    "biome/noVoidElementsWithChildren",
+    "biome/recommended",
+    "biome/useAltText",
+    "biome/useAnchorContent",
+    "biome/useButtonType",
+    "biome/useIframeTitle",
+    "biome/useJsxKeyInIterable",
+    "biome/useKeyWithClickEvents",
+    "biome/useValidAriaProps",
+    "biome/useValidAriaRole",
+    "CMT-1",
+    "CMT-2",
+    "CMT-3",
+    "CMT-4",
+    "CMT-5",
+    "CMT-6",
+    "CMT-7",
+    "CONCERN-1",
+    "CONCERN-2",
+    "CONCERN-3",
+    "CONCERN-4",
+    "CONCERN-5",
+    "CONCERN-6",
+    "dependency-cruiser/closed-modules",
+    "dependency-cruiser/layer-order",
+    "dependency-cruiser/no-circular",
+    "dependency-cruiser/no-ui-in-pure-layer",
+    "E2E-1",
+    "E2E-2",
+    "FIX-1",
+    "FIX-2",
+    "GEN-1",
+    "GEN-2",
+    "import/no-relative-parent-imports",
+    "jscpd/changed-lines-duplication",
+    "knip/dependencies",
+    "knip/duplicates",
+    "knip/exports",
+    "knip/files",
+    "knip/unlisted",
+    "max-depth",
+    "max-lines",
+    "max-lines-per-function",
+    "max-params",
+    "NAME-1",
+    "NAME-2",
+    "NAME-3",
+    "NAME-4",
+    "NAME-5",
+    "no-ternary",
+    "no-warning-comments",
+    "quality-rules/no-boolean-argument",
+    "quality-rules/no-disable-comments",
+    "quality-rules/no-props-destructuring",
+    "quality-rules/no-range-bound-comparison",
+    "quality-rules/no-scientific-literal",
+    "REUSE-1",
+    "REUSE-2",
+    "STYLE-1",
+    "STYLE-2",
+    "STYLE-3",
+    "TYPE-1",
+    "TYPE-2",
+    "UNIT-1",
+    "unit-tests/imported-by-tests",
+    "UX-1",
+    "UX-2",
+    "UX-3"
+  ]
+}

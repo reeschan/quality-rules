@@ -1,0 +1,48 @@
+{
+  "root": false,
+  "linter": {
+    "rules": {
+      "a11y": {
+        "useAltText": "error",
+        "useButtonType": "error",
+        "useValidAriaRole": "error",
+        "useValidAriaProps": "error",
+        "useKeyWithClickEvents": "error",
+        "useAnchorContent": "error",
+        "useIframeTitle": "error",
+        "noRedundantRoles": "error",
+        "noAriaHiddenOnFocusable": "error"
+      },
+      "correctness": {
+        "useJsxKeyInIterable": "error",
+        "noChildrenProp": "error",
+        "noVoidElementsWithChildren": "error"
+      },
+      "suspicious": {
+        "noDuplicateJsxProps": "error",
+        "noCommentText": "error",
+        "noConsole": "error",
+        "noExplicitAny": "error",
+        "noDoubleEquals": "error",
+        "noArrayIndexKey": "error"
+      },
+      "preset": "recommended",
+      "style": {
+        "noNestedTernary": "error",
+        "noParameterAssign": "error"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "es5"
+    }
+  }
+}

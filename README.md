@@ -42,7 +42,7 @@ Create `quality-rules.json` in the project root:
 }
 ```
 
-Do not write `"packages"` or `"resolved"` yourself: `sync` writes `packages` (the versions it synced) and `resolved` (the rules and conventions in effect). `quality-rules list` shows the available packs. Every field is described in the [manifest guide](docs/guides/manifest.md).
+Do not write `"packages"` or `"resolved"` yourself: `sync` writes `packages` (for each package, the version whose additions have all been accepted or excluded) and `resolved` (the rules and conventions in effect). `quality-rules list` shows the available packs. Every field is described in the [manifest guide](docs/guides/manifest.md).
 
 ## Commands
 
@@ -54,11 +54,12 @@ npx quality-rules sync --accept-all        # take in every pending one
 npx quality-rules check          # CI: fail when the generated files differ from what sync writes
 npx quality-rules duplication    # duplication in lines changed against the base branch
 npx quality-rules unit-tests     # every file in the chosen folders is imported by a unit test
+npx quality-rules suppressions   # no eslint, oxlint or biome suppression comment in the source files
 ```
 
 All commands accept `--cwd <folder>` (the project folder) and `--help`.
 
-`check` only compares the generated files and the manifest with what `sync` would write. It does not run `duplication` or `unit-tests`; run those as their own steps. Pending rules are listed by `sync` and `check`, but they stay off until accepted and do not fail `check`.
+`check` only compares the generated files and the manifest with what `sync` would write. It does not run `duplication`, `unit-tests` or `suppressions`; run those as their own steps. Pending rules are listed by `sync` and `check`, but they stay off until accepted and do not fail `check`. While some are pending, `packages` keeps the version from before the upgrade; it moves to the installed version once every addition is accepted or excluded. Removing an ID from `exclude` turns it back on at the next `sync`, without making it pending.
 
 Exit codes: 0 passes, 1 a check failed, 2 a broken manifest, catalog or command line.
 

@@ -111,7 +111,7 @@ stateDiagram-v2
 }
 ```
 
-- `resolved` は**同期**が書く。版を上げたとき、束にあって `resolved` にも `exclude` にも無いものが**保留中のルール**になる。
+- `resolved` は**同期**が書く。版を上げたとき、前回も選んでいた束にあり、`packages` の版より後に足され、`resolved` にも `exclude` にも無いものが**保留中のルール**になる（「実装の計画で決めたこと」の 2 つ目と 3 つ目の項目）。
 - 案件固有の規約の ID は、パッケージの分類名と重ならない接頭辞（例 `PROJ-`）を使う。`sync` は重なりを見つけたらエラーで止める。
 
 ### CLI（`quality-rules`）
@@ -158,7 +158,7 @@ stateDiagram-v2
 
 | ルール | 禁じること | オプション |
 | --- | --- | --- |
-| `quality-rules/no-disable-comments` | lint の抑止コメント（eslint・oxlint・biome の disable / ignore） | なし（例外は設定ファイルの overrides に理由付きで書かせる） |
+| `quality-rules/no-disable-comments` | lint の抑止コメント（eslint・oxlint・biome の disable / ignore） | `quality-rules suppressions` が読むフォルダ `dirs`（既定 `["src"]`）。ルール自身はオプションを取らない（例外は設定ファイルの overrides に理由付きで書かせる） |
 | `quality-rules/no-boolean-argument` | 関数の呼び出しの引数に真偽値のリテラルを渡すこと | 許す関数名、許す名前のパターン（例 `^set[A-Z]`） |
 | `quality-rules/no-scientific-literal` | 指数表記の数値リテラルを、許したファイルの外に書くこと | 許すファイル |
 | `quality-rules/no-range-bound-comparison` | 2 つの範囲の最小（`min`）と最大（`max`）を比べる式を、許したファイルの外に書くこと | 許すファイル |

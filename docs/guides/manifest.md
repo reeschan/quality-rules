@@ -18,7 +18,7 @@
 
 | 欄 | 内容 |
 | --- | --- |
-| `packages` | 前回**同期**したパッケージの版。`sync` が書き直す。版上げで増えたものを調べる基準になる。 |
+| `packages` | パッケージごとの、増えたものを全部受け入れ終えた（または外した）版。`sync` が書き直す。版上げで増えたものを調べる基準になる。 |
 | `packs` | 取り入れる**束**の名前（`quality-rules list` で一覧が出る）。 |
 | `exclude` | 外す**ルール**・**規約**の ID。**規約**を外すと、それを受け持つ**ルール**も一緒に外れる。 |
 | `include` | 外した**規約**のうち、受け持つ**ルール**だけを改めて入れたいときに、そのルールの ID を書く。**規約**そのものを戻すときは `exclude` から除く。 |
@@ -34,6 +34,7 @@
 - 依存の向き: `dependency-cruiser/layer-order`（`layers` に名前とパスを上から順に）、`dependency-cruiser/closed-modules`（`modules` と `public`）、`dependency-cruiser/no-ui-in-pure-layer`（`layers`）。
 - 重複: `jscpd/changed-lines-duplication` の `baseBranch` と `dirs`。
 - 単体テスト: `unit-tests/imported-by-tests` の `dirs`・`testDirs`・`tsconfig`。
+- 抑止コメント: `quality-rules/no-disable-comments` の `dirs`（`quality-rules suppressions` が読む。既定は `["src"]`）。
 
 形が違うオプションは `sync` と各下位コマンドがエラーで知らせます。
 
@@ -45,10 +46,10 @@
 
 パッケージの版を上げると、**束**に**ルール**や**規約**が増えることがあります。増えたものは、次の両方に当てはまるときだけ**保留中のルール**になります。
 
-- パッケージに足された版が、`packages` に書いてある（前回同期した）版より新しい。
+- パッケージに足された版が、`packages` に書いてある版より新しい。
 - 前回も選んでいた**束**にある。
 
-初めて選んだ**束**のものは、そのまま有効になります。保留中のものは有効にならず、lint にも出ません。`sync` と `check` が一覧で知らせます（`check` は知らせるだけで失敗にしません）。
+初めて選んだ**束**のものと、`packages` にまだ無いパッケージ（初めての `sync`）のものは、そのまま有効になります。保留中のものは有効にならず、lint にも出ません。`sync` と `check` が一覧で知らせます（`check` は知らせるだけで失敗にしません）。
 
 受け入れ方:
 
@@ -57,9 +58,13 @@ quality-rules sync --accept NAME-3      # 1 本ずつ（繰り返せる）
 quality-rules sync --accept-all         # すべて
 ```
 
-受け入れたものが `resolved` に足されます。受け入れたくないものは `exclude` に書きます。`exclude` から ID を除くと、そのものは改めて保留中になり、`sync --accept <id>` を通すまで有効になりません。`--accept` に `exclude` にあるものや保留中でないものを指すとエラーです。
+受け入れたものが `resolved` に足されます。受け入れたくないものは `exclude` に書きます。`--accept` に `exclude` にあるものや保留中でないものを指すとエラーです。
 
-パッケージから無くなったものは、`resolved` と `exclude` から除かれ、除いたことが出力されます。
+あるパッケージの保留中が残る間は、`packages` のそのパッケージの版は版上げの前のまま残り、保留中のものは次の `sync` でも保留中のままです。保留中を全部受け入れるか外すと、次の `sync`（受け入れる `sync` そのものを含む）で、`packages` が入っている版に上がります。
+
+`exclude` から ID を除くと、その ID は次の `sync` ですぐに有効に戻り、保留中にはなりません。**規約**を `exclude` から除くと、それを受け持つ**ルール**も一緒に有効に戻ります。ただし、まだ `packages` の版より新しく足されたもの（保留中のまま外したもの）は、除くと保留中に戻ります。
+
+パッケージから無くなったものは、マニフェストのどこに書いてあっても（`resolved`・`exclude`・`include`・`options`）そこから除かれ、除いたことが欄と一緒に出力されます。
 
 ## 案件固有の規約
 

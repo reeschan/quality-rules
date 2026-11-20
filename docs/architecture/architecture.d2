@@ -1,0 +1,119 @@
+# quality-rules architecture
+# __MONO__ is the colour of single-colour logos. render.py replaces it for the light (000000) and dark (ffffff) images.
+# Render: python <arch-diagram skill version dir>/scripts/render.py docs/architecture/architecture.d2
+direction: right
+
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 40
+  }
+}
+
+classes: {
+  svc: {
+    shape: rectangle
+    style: {
+      border-radius: 12
+      font-size: 15
+    }
+  }
+  ext: {
+    shape: image
+    width: 64
+    height: 64
+    label.near: outside-bottom-center
+  }
+  zone: {
+    style.border-radius: 16
+  }
+  saas: {
+    style: {
+      border-radius: 16
+      stroke-dash: 3
+    }
+  }
+}
+
+dev: Developer {
+  class: ext
+  icon: https://icons.terrastruct.com/essentials%2F005-programmer.svg
+}
+
+npm: "npm packages (@reeschan)" {
+  class: zone
+  icon: https://cdn.simpleicons.org/npm
+  direction: down
+
+  ts: "quality-rules-typescript\nCLI, packs, custom rules, conventions" {
+    class: svc
+    icon: https://cdn.simpleicons.org/typescript
+  }
+  react: "quality-rules-react\nreact pack, rule, convention" {
+    class: svc
+    icon: https://cdn.simpleicons.org/react
+  }
+}
+
+project: Your project {
+  class: zone
+  icon: https://icons.terrastruct.com/tech%2Flaptop.svg
+  direction: down
+
+  manifest: "quality-rules.json\npacks, exclude, options, resolved" {
+    class: svc
+    icon: https://cdn.simpleicons.org/json/__MONO__
+  }
+  generated: "quality-rules/\ngenerated tool configs" {
+    class: svc
+    icon: https://cdn.simpleicons.org/json/__MONO__
+  }
+  configs: "Project configs\nextend the generated files" {
+    class: svc
+    icon: https://cdn.simpleicons.org/json/__MONO__
+  }
+}
+
+tools: Lint tools {
+  class: saas
+  direction: down
+
+  biome: Biome {
+    class: ext
+    icon: https://cdn.simpleicons.org/biome
+  }
+  oxlint: oxlint {
+    class: ext
+    icon: https://cdn.simpleicons.org/oxc
+  }
+  eslint: "ESLint + Prettier" {
+    class: ext
+    icon: https://cdn.simpleicons.org/eslint
+  }
+  knip: knip {
+    class: ext
+    icon: https://cdn.simpleicons.org/knip
+  }
+  depcruise: "dependency-cruiser\njscpd" {
+    class: svc
+  }
+}
+
+ci: GitHub Actions {
+  class: ext
+  icon: https://cdn.simpleicons.org/githubactions
+}
+
+review: "Review (lens-review)\nreads the chosen conventions" {
+  class: svc
+  style.stroke-dash: 4
+}
+
+dev -> project.manifest: choose packs, exclude IDs
+npm -> project.generated: quality-rules sync
+project.manifest -> project.generated: resolved rules
+project.configs -> project.generated: extends
+project.configs -> tools: loaded by
+ci -> tools: quality-rules check, lint
+review -> project.manifest: {style.stroke-dash: 4}
+review -> npm.ts: convention text {style.stroke-dash: 4}

@@ -1,0 +1,125 @@
+{
+  "description": "Upper limits on function length, file length, parameters and nesting depth",
+  "rules": [
+    {
+      "id": "max-lines-per-function",
+      "tool": "oxlint",
+      "description": "Limit the lines of a function, not counting blank lines and comments",
+      "added": "0.1.0",
+      "options": 100,
+      "config": {
+        "oxlint": {
+          "rules": {
+            "max-lines-per-function": [
+              "error",
+              {
+                "max": "{{options}}",
+                "skipBlankLines": true,
+                "skipComments": true
+              }
+            ]
+          }
+        },
+        "eslint": {
+          "rules": {
+            "max-lines-per-function": [
+              "error",
+              {
+                "max": "{{options}}",
+                "skipBlankLines": true,
+                "skipComments": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "max-lines",
+      "tool": "oxlint",
+      "description": "Limit the lines of a file",
+      "added": "0.1.0",
+      "options": 400,
+      "config": {
+        "oxlint": {
+          "rules": {
+            "max-lines": [
+              "error",
+              {
+                "max": "{{options}}"
+              }
+            ]
+          }
+        },
+        "eslint": {
+          "rules": {
+            "max-lines": [
+              "error",
+              {
+                "max": "{{options}}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "max-params",
+      "tool": "oxlint",
+      "description": "Limit the parameters of a function",
+      "added": "0.1.0",
+      "options": 4,
+      "config": {
+        "oxlint": {
+          "rules": {
+            "max-params": [
+              "error",
+              {
+                "max": "{{options}}"
+              }
+            ]
+          }
+        },
+        "eslint": {
+          "rules": {
+            "max-params": [
+              "error",
+              {
+                "max": "{{options}}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "max-depth",
+      "tool": "oxlint",
+      "description": "Limit how deeply blocks nest",
+      "added": "0.1.0",
+      "options": 4,
+      "config": {
+        "oxlint": {
+          "rules": {
+            "max-depth": [
+              "error",
+              {
+                "max": "{{options}}"
+              }
+            ]
+          }
+        },
+        "eslint": {
+          "rules": {
+            "max-depth": [
+              "error",
+              {
+                "max": "{{options}}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

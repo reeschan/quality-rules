@@ -1,0 +1,15 @@
+{
+  "description": "Duplicated code on the lines changed since the base branch, found with jscpd by `quality-rules duplication`",
+  "rules": [
+    {
+      "id": "jscpd/changed-lines-duplication",
+      "tool": "jscpd",
+      "description": "Report duplicated code that touches the lines changed since the merge-base with the base branch, so that old duplicates do not fail the check",
+      "added": "0.1.0",
+      "options": {
+        "baseBranch": "main",
+        "dirs": ["src"]
+      }
+    }
+  ]
+}

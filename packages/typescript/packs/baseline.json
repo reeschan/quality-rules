@@ -1,0 +1,195 @@
+{
+  "description": "Biome's recommended lint rules with stricter picks, and the shared formatting",
+  "rules": [
+    {
+      "id": "biome/recommended",
+      "tool": "biome",
+      "description": "Start from Biome's recommended lint rules",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "preset": "recommended"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noConsole",
+      "tool": "biome",
+      "description": "Disallow console output",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "suspicious": {
+                "noConsole": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "rules": {
+            "no-console": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noExplicitAny",
+      "tool": "biome",
+      "description": "Disallow the any type",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "suspicious": {
+                "noExplicitAny": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "rules": {
+            "no-restricted-syntax": [
+              "error",
+              {
+                "selector": "TSAnyKeyword",
+                "message": "Unexpected any. Specify a different type."
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noDoubleEquals",
+      "tool": "biome",
+      "description": "Disallow == and != (use === and !==)",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "suspicious": {
+                "noDoubleEquals": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "rules": {
+            "eqeqeq": [
+              "error",
+              "always",
+              {
+                "null": "ignore"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noNestedTernary",
+      "tool": "biome",
+      "description": "Disallow a ternary expression inside another",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "style": {
+                "noNestedTernary": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "rules": {
+            "no-nested-ternary": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noParameterAssign",
+      "tool": "biome",
+      "description": "Disallow assigning to function parameters",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "style": {
+                "noParameterAssign": "error"
+              }
+            }
+          }
+        },
+        "eslint": {
+          "rules": {
+            "no-param-reassign": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/noArrayIndexKey",
+      "tool": "biome",
+      "description": "Disallow array indexes as keys of rendered list items",
+      "added": "0.1.0",
+      "config": {
+        "biome": {
+          "linter": {
+            "rules": {
+              "suspicious": {
+                "noArrayIndexKey": "error"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "biome/formatter",
+      "tool": "biome",
+      "description": "Format with spaces, single quotes, a line width of 100 and es5 trailing commas",
+      "added": "0.1.0",
+      "options": {
+        "indentStyle": "space",
+        "indentWidth": 2,
+        "lineWidth": 100,
+        "quoteStyle": "single",
+        "trailingCommas": "es5"
+      },
+      "config": {
+        "biome": {
+          "formatter": {
+            "enabled": true,
+            "indentStyle": "{{options.indentStyle}}",
+            "indentWidth": "{{options.indentWidth}}",
+            "lineWidth": "{{options.lineWidth}}"
+          },
+          "javascript": {
+            "formatter": {
+              "quoteStyle": "{{options.quoteStyle}}",
+              "trailingCommas": "{{options.trailingCommas}}"
+            }
+          }
+        },
+        "prettier": {
+          "printWidth": "{{options.lineWidth}}",
+          "tabWidth": "{{options.indentWidth}}",
+          "useTabs": "{{options.indentStyle}}",
+          "singleQuote": "{{options.quoteStyle}}",
+          "trailingComma": "{{options.trailingCommas}}"
+        }
+      }
+    }
+  ]
+}

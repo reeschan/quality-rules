@@ -1,0 +1,95 @@
+{
+  "description": "No ternaries, no work-note comments, no imports from parent folders and no lint suppression comments",
+  "rules": [
+    {
+      "id": "no-ternary",
+      "tool": "oxlint",
+      "description": "Disallow ternary expressions",
+      "added": "0.1.0",
+      "config": {
+        "oxlint": {
+          "rules": {
+            "no-ternary": "error"
+          }
+        },
+        "eslint": {
+          "rules": {
+            "no-ternary": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "no-warning-comments",
+      "tool": "oxlint",
+      "description": "Disallow work-note comments such as todo, fixme, xxx and hack",
+      "added": "0.1.0",
+      "options": {
+        "terms": ["todo", "fixme", "xxx", "hack"],
+        "location": "anywhere"
+      },
+      "config": {
+        "oxlint": {
+          "rules": {
+            "no-warning-comments": ["error", "{{options}}"]
+          }
+        },
+        "eslint": {
+          "rules": {
+            "no-warning-comments": ["error", "{{options}}"]
+          }
+        }
+      }
+    },
+    {
+      "id": "import/no-relative-parent-imports",
+      "tool": "oxlint",
+      "description": "Disallow relative imports from parent folders (use a path alias)",
+      "added": "0.1.0",
+      "config": {
+        "oxlint": {
+          "plugins": ["import"],
+          "rules": {
+            "import/no-relative-parent-imports": "error"
+          }
+        },
+        "eslint": {
+          "rules": {
+            "no-restricted-imports": [
+              "error",
+              {
+                "patterns": [
+                  {
+                    "regex": "^\\.\\.(/|$)",
+                    "message": "Use a path alias instead of a relative import from a parent folder."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "quality-rules/no-disable-comments",
+      "tool": "oxlint",
+      "description": "Disallow comments that suppress eslint, oxlint or biome diagnostics",
+      "added": "0.1.0",
+      "config": {
+        "oxlint": {
+          "rules": {
+            "quality-rules/no-disable-comments": "error"
+          }
+        },
+        "eslint": {
+          "linterOptions": {
+            "noInlineConfig": true
+          },
+          "rules": {
+            "quality-rules/no-disable-comments": "error"
+          }
+        }
+      }
+    }
+  ]
+}

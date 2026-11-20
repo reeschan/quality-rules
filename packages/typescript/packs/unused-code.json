@@ -1,0 +1,79 @@
+{
+  "description": "A minimal knip preset for unused files, dependencies and exports; the project adds entry and ignore",
+  "rules": [
+    {
+      "id": "knip/files",
+      "tool": "knip",
+      "description": "Report files that no entry file reaches",
+      "added": "0.1.0",
+      "config": {
+        "knip": {
+          "rules": {
+            "files": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "knip/dependencies",
+      "tool": "knip",
+      "description": "Report dependencies in package.json that no file uses",
+      "added": "0.1.0",
+      "config": {
+        "knip": {
+          "rules": {
+            "dependencies": "error",
+            "devDependencies": "error",
+            "optionalPeerDependencies": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "knip/unlisted",
+      "tool": "knip",
+      "description": "Report imports and executables that package.json does not list, and imports that do not resolve",
+      "added": "0.1.0",
+      "config": {
+        "knip": {
+          "rules": {
+            "unlisted": "error",
+            "binaries": "error",
+            "unresolved": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "knip/exports",
+      "tool": "knip",
+      "description": "Report exports, exported types and exported enum and namespace members that no other file imports",
+      "added": "0.1.0",
+      "config": {
+        "knip": {
+          "rules": {
+            "exports": "error",
+            "nsExports": "error",
+            "types": "error",
+            "nsTypes": "error",
+            "enumMembers": "error",
+            "namespaceMembers": "error"
+          }
+        }
+      }
+    },
+    {
+      "id": "knip/duplicates",
+      "tool": "knip",
+      "description": "Report a value exported more than once from the same file",
+      "added": "0.1.0",
+      "config": {
+        "knip": {
+          "rules": {
+            "duplicates": "error"
+          }
+        }
+      }
+    }
+  ]
+}

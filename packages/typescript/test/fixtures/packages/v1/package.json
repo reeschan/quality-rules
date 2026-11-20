@@ -1,0 +1,16 @@
+{
+  "name": "@example/quality-rules-sample",
+  "version": "1.0.0",
+  "description": "Sample package for the CLI tests: one pack with rules and a convention, and one pack of a convention only",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs",
+    "./package.json": "./package.json"
+  },
+  "qualityRules": {
+    "packs": "packs",
+    "conventions": "conventions",
+    "rules": "."
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "description": "Names that tell what a function does, without boolean flag arguments",
+  "rules": [
+    {
+      "id": "quality-rules/no-boolean-argument",
+      "tool": "oxlint",
+      "description": "Disallow boolean literals as arguments of function calls",
+      "added": "0.1.0",
+      "options": {
+        "allowFunctions": [],
+        "allowNamePatterns": []
+      },
+      "config": {
+        "oxlint": {
+          "rules": {
+            "quality-rules/no-boolean-argument": ["error", "{{options}}"]
+          }
+        },
+        "eslint": {
+          "rules": {
+            "quality-rules/no-boolean-argument": ["error", "{{options}}"]
+          }
+        }
+      }
+    }
+  ]
+}

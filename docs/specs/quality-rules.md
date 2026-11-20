@@ -126,10 +126,12 @@ stateDiagram-v2
 
 - **束の割り当て**: 規約は、受け持つルールの束に入れる（ルール側に合わせる）。作業メモの規約（CMT）・パス別名と三項演算子の規約（STYLE）→ `lint-hygiene`、公開する口の規約（CONCERN）→ `structure`、UNIT → `unit-tests`、真偽値の引数の規約（NAME）→ `no-boolean-argument` と同じ束。受け持つルールの無い規約は分類ごとの束（`naming`・`generality`・`root-cause`・`reuse`・`concern`・`comments`・`ux`・`e2e`・`types`）。`no-scientific-literal`・`no-range-bound-comparison` は束 `centralize`、biome の基本の設定と書式は束 `baseline`、knip は束 `unused-code`。上のマニフェストの例の束の名前は例にすぎない。
 - **束の形**: ルールは `packs/<束>.json` に、規約は規約のファイルの「束」の欄に書き、束の中身を両者の和とする（規約だけの束は packs のファイルを持たない）。
-- **版上げと同時に新しい束を選んだとき**: 各ルール・規約に、パッケージに足された版を持たせる。マニフェストの `packages` に書いた（前回同期した）版より新しく足されたもので、前回も選んでいた束にあるものだけを保留中にする。初めて選んだ束のものは有効にする。
+- **版上げと同時に新しい束を選んだとき**: 各ルール・規約に、パッケージに足された版を持たせる。マニフェストの `packages` に書いた版より新しく足されたもので、前回も選んでいた束にあるものだけを保留中にする。初めて選んだ束のものは有効にする。
+- **`packages` の版を上げる時（2026-11-21、保守者が承認）**: `packages` は「そのパッケージの増えたものを全部受け入れ終えた版」とする。`sync` は、あるパッケージの保留中が 0 件になってから、そのパッケージの `packages` を入っている版に上げる。保留中が残る間は前の版のままにする。こうすると、保留中は次の `sync` でも保留中のまま残り、外した ID を `exclude` から消せばすぐ有効に戻る（「外した → 有効」）。`packages` にまだ無いパッケージ（初めての `sync`）には保留中が無い。
 - **案件固有の規約**: マニフェストに `"local": { "prefix": "PROJ", "dir": "docs/conventions" }` の欄を足す。`sync` は、prefix がパッケージの分類名と重なるとき、または dir の規約のファイルの ID がパッケージの規約の ID と重なるとき、エラーで止める。
 - **道具の組**: マニフェストに `"toolchain": "biome-oxlint" | "eslint-prettier"`（既定は `biome-oxlint`）を足す。`eslint-prettier` なら、`sync` は biome・oxlint の代わりに ESLint の flat config と Prettier の設定の生成物を作る。
 - **重複と単体テストの検査**: CLI の下位コマンド `quality-rules duplication` / `quality-rules unit-tests` にする。`check` はこれらを走らせない（`check` は生成物の一致だけを見る）。
+- **抑止コメントの検査（2026-11-21、保守者が承認）**: oxlint には ESLint の `noInlineConfig` に当たる切り替えが無く、ルール名の無い `oxlint-disable` が `quality-rules/no-disable-comments` 自身の指摘も黙らせる。これを塞ぐため、CLI に下位コマンド `quality-rules suppressions` を足す。ソースの抑止コメント（eslint・oxlint・biome）を拾い、あれば失敗にする。`no-disable-comments` が有効のときだけ検査し、`check` は走らせない。
 - **`quality-rules/` の知らないファイル**: `sync` は消さずに残し、知らせる。
 - **Python などの層**: 文書（層の足し方の手引き）と、カタログの形が言語に依らないことに留め、パッケージの雛形は作らない。
 - **公開**: changesets で版を上げ、`v*` のタグの push（と手動の起動）で公開の workflow が走る。タグを打つのは保守者。

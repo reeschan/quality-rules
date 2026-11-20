@@ -1,14 +1,12 @@
-import { listLines, QualityRulesError } from '../catalog/conventions.ts';
-import { isObject, type Json, type JsonObject } from '../catalog/load.ts';
+import { FragmentKind } from '../catalog/fragment-kind.ts';
+import { listLines, QualityRulesError } from '../errors.ts';
+import { isObject, type Json, type JsonObject } from '../json.ts';
 import type { Resolution, ResolvedRule } from '../resolve/resolve.ts';
-import { formatJson } from './biome.ts';
+import { formatJson } from './format.ts';
 import type { Generator } from './index.ts';
 
 /** File name of the generated dependency-cruiser configuration. */
 export const DEPENDENCY_CRUISER_FILE = 'dependency-cruiser.json';
-
-/** Kind of the configuration fragments that the rules of the structure pack carry. */
-const KIND = 'dependency-cruiser';
 
 /**
  * What a rule checks, named by the `check` key of its `dependency-cruiser` fragment. The
@@ -84,7 +82,7 @@ export function dependencyCruiserConfig(resolution: Resolution): JsonObject {
 }
 
 function checkOf(item: ResolvedRule): string | undefined {
-  const fragment = item.rule.config[KIND];
+  const fragment = item.rule.config[FragmentKind.DEPENDENCY_CRUISER];
   if (fragment === undefined) {
     return undefined;
   }

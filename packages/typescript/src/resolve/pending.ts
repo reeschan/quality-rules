@@ -1,4 +1,5 @@
-import { type CatalogPack, compareIds } from '../catalog/load.ts';
+import { compareIds } from '../catalog/names.ts';
+import type { CatalogPack } from '../catalog/types.ts';
 import type { Manifest } from '../manifest/manifest.ts';
 import { isNewerVersion } from './version.ts';
 

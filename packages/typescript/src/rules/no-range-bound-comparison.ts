@@ -12,7 +12,12 @@ interface NoRangeBoundComparisonOptions {
 
 const RELATIONAL_OPERATORS = new Set(['<', '<=', '>', '>=']);
 
-type Bound = 'min' | 'max';
+/** The properties of a range object that hold its bounds. */
+const Bound = {
+  MIN: 'min',
+  MAX: 'max',
+} as const;
+type Bound = (typeof Bound)[keyof typeof Bound];
 
 interface BoundAccess {
   readonly bound: Bound;
@@ -27,7 +32,7 @@ function unwrapChain(
 }
 
 function toBound(name: unknown): Bound | undefined {
-  return name === 'min' || name === 'max' ? name : undefined;
+  return Object.values(Bound).find((bound) => bound === name);
 }
 
 /** Reads `range.min`, `range.max`, `range?.min` or `range['min']`. */

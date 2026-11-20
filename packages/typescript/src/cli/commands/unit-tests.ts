@@ -1,7 +1,8 @@
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { QualityRulesError } from '../../catalog/conventions.ts';
-import { isObject, loadCatalog } from '../../catalog/load.ts';
+import { loadCatalog } from '../../catalog/load.ts';
+import { QualityRulesError } from '../../errors.ts';
+import { isObject } from '../../json.ts';
 import { readManifest } from '../../manifest/manifest.ts';
 import { resolve } from '../../resolve/resolve.ts';
 import { stripComments } from '../../source/comments.ts';

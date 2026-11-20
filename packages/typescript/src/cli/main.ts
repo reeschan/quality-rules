@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { QualityRulesError } from '../catalog/conventions.ts';
+import { QualityRulesError } from '../errors.ts';
 import { checkCommand } from './commands/check.ts';
 import { duplicationCommand } from './commands/duplication.ts';
 import { listCommand } from './commands/list.ts';

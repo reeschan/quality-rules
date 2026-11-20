@@ -1,4 +1,5 @@
-import { type Catalog, type CatalogPack, loadCatalog } from '../../catalog/load.ts';
+import { loadCatalog } from '../../catalog/load.ts';
+import type { Catalog, CatalogPack } from '../../catalog/types.ts';
 import type { CommandSpec } from '../main.ts';
 
 /** `quality-rules list`: the packs, rules and conventions of the installed packages. */
@@ -16,7 +17,7 @@ export const listCommand: CommandSpec = {
   },
 };
 
-/** The list as data, for tools such as stack-setup that offer the packs as choices. */
+/** The list as data for other tools (e.g. a setup tool that offers the packs as choices). */
 function toJson(catalog: Catalog) {
   return {
     packages: catalog.packages.map((item) => ({ name: item.name, version: item.version })),
@@ -54,17 +55,34 @@ function toText(catalog: Catalog): string {
   return lines.join('\n');
 }
 
+/** What a row of the text list stands for. */
+const RowKind = {
+  RULE: 'rule',
+  CONVENTION: 'convention',
+} as const;
+type RowKind = (typeof RowKind)[keyof typeof RowKind];
+
+/** One row of a pack in the text list. */
+interface Row {
+  readonly kind: RowKind;
+  readonly id: string;
+  /** The tool of a rule, or the layer of a convention. */
+  readonly tool: string;
+  readonly added: string;
+  readonly description: string;
+}
+
 function packLines(pack: CatalogPack): string[] {
-  const rows = [
+  const rows: Row[] = [
     ...pack.rules.map((rule) => ({
-      kind: 'rule',
+      kind: RowKind.RULE,
       id: rule.id,
       tool: rule.tool,
       added: rule.added,
       description: rule.description,
     })),
     ...pack.conventions.map((convention) => ({
-      kind: 'convention',
+      kind: RowKind.CONVENTION,
       id: convention.id,
       tool: convention.layer,
       added: convention.added,

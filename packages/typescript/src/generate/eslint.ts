@@ -1,8 +1,10 @@
-import { type Catalog, isObject, type Json, type JsonObject } from '../catalog/load.ts';
+import { FragmentKind } from '../catalog/fragment-kind.ts';
+import type { Catalog } from '../catalog/types.ts';
+import { isObject, type Json, type JsonObject, mergeJson, withDefaults } from '../json.ts';
+import { PLUGIN_NAME } from '../plugin-name.ts';
 import { fragmentsFor, type Resolution } from '../resolve/resolve.ts';
-import { columns, type FormatStyle, mergeJson, withDefaults } from './biome.ts';
+import { columns, type FormatStyle } from './format.ts';
 import type { Generator, GeneratorContext } from './index.ts';
-import { PLUGIN_NAME } from './oxlint-plugin.ts';
 
 /**
  * File name of the generated ESLint configuration. It is not named `eslint.config.*`, so that
@@ -36,7 +38,7 @@ export interface EslintSettings {
  * plugins are not loaded: ESLint does not look up the rule of an `off` setting.
  */
 export function eslintSettings(resolution: Resolution): EslintSettings {
-  const { active, inactive } = fragmentsFor(resolution, 'eslint');
+  const { active, inactive } = fragmentsFor(resolution, FragmentKind.ESLINT);
   const merged = active.reduce<Json>(mergeJson, {}) as JsonObject;
   const off: Record<string, Json> = {};
   for (const fragment of inactive) {
@@ -185,7 +187,7 @@ function renderObject(
     const name = IDENTIFIER.test(key) ? key : quote(key, style);
     const head = `${inner}${name}: `;
     const comma = commaWidth(index, entries.length, style);
-    if (typeof item === 'string' && breaksAfterKey(name, head, item, comma, style)) {
+    if (typeof item === 'string' && breaksAfterKey({ name, head, item, comma }, style)) {
       return `${inner}${name}:\n${inner}${style.indent}${quote(item, style)}`;
     }
     return `${head}${renderJs(item, style, depth + 1, columns(head, style) + comma)}`;
@@ -193,17 +195,23 @@ function renderObject(
   return `{\n${joinItems(lines, style)}\n${style.indent.repeat(depth)}}`;
 }
 
+/** A property whose value is a string, as {@link renderObject} lays it out. */
+interface StringProperty {
+  /** The key as written: an identifier or a string literal. */
+  readonly name: string;
+  /** The line up to the value: the indentation, the key and `: `. */
+  readonly head: string;
+  readonly item: string;
+  /** Width of the comma after the value. */
+  readonly comma: number;
+}
+
 /**
  * Whether Prettier puts a string value on the line after its key: when the property does not
  * fit in the line width and the key is long enough for the move to win columns.
  */
-function breaksAfterKey(
-  name: string,
-  head: string,
-  item: string,
-  comma: number,
-  style: FormatStyle
-): boolean {
+function breaksAfterKey(property: StringProperty, style: FormatStyle): boolean {
+  const { name, head, item, comma } = property;
   const minimumOverlap = 3;
   const fits = columns(head, style) + quote(item, style).length + comma <= style.lineWidth;
   return !fits && name.length >= style.indentWidth + minimumOverlap;

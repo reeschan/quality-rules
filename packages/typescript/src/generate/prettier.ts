@@ -1,6 +1,7 @@
-import type { Json, JsonObject } from '../catalog/load.ts';
+import { FragmentKind } from '../catalog/fragment-kind.ts';
+import { type Json, type JsonObject, mergeJson } from '../json.ts';
 import { fragmentsFor, type Resolution } from '../resolve/resolve.ts';
-import { type FormatStyle, formatJson, mergeJson } from './biome.ts';
+import { type FormatStyle, formatJson } from './format.ts';
 import type { Generator } from './index.ts';
 
 /** File name of the generated Prettier configuration. */
@@ -27,7 +28,7 @@ const FROM_BIOME_VALUES: Readonly<Record<string, Readonly<Record<string, boolean
  * apply to what they would have set.
  */
 export function prettierConfig(resolution: Resolution): JsonObject {
-  const { active } = fragmentsFor(resolution, 'prettier');
+  const { active } = fragmentsFor(resolution, FragmentKind.PRETTIER);
   const merged = active.reduce<Json>(mergeJson, {}) as JsonObject;
   return Object.fromEntries(
     Object.entries(merged).map(([key, value]) => [key, prettierValue(key, value)])

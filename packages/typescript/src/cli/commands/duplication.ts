@@ -4,8 +4,9 @@ import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import type * as JscpdModule from 'jscpd';
-import { QualityRulesError } from '../../catalog/conventions.ts';
-import { isObject, loadCatalog } from '../../catalog/load.ts';
+import { loadCatalog } from '../../catalog/load.ts';
+import { QualityRulesError } from '../../errors.ts';
+import { isObject } from '../../json.ts';
 import { readManifest } from '../../manifest/manifest.ts';
 import { resolve } from '../../resolve/resolve.ts';
 import type { CommandIo, CommandSpec } from '../main.ts';
@@ -19,8 +20,14 @@ interface DuplicationOptions {
   readonly dirs: readonly string[];
 }
 
+/** Marks a file whose lines all count as changed. */
+const WholeFile = {
+  ALL: 'all',
+} as const;
+type WholeFile = (typeof WholeFile)[keyof typeof WholeFile];
+
 /** Lines of one file, as `[first, last]` pairs (1-based, both included), or all of them. */
-type ChangedLines = readonly (readonly [number, number])[] | 'all';
+type ChangedLines = readonly (readonly [number, number])[] | WholeFile;
 
 /** One duplicate that jscpd found, with both places. */
 interface Clone {
@@ -208,7 +215,7 @@ async function changedLines(cwd: string, mergeBase: string): Promise<Map<string,
   const changed = parseDiff(diff);
   const untracked = await gitOrFail(cwd, ['ls-files', '--others', '--exclude-standard', '-z']);
   for (const file of untracked.split('\0').filter((name) => name !== '')) {
-    changed.set(file, 'all');
+    changed.set(file, WholeFile.ALL);
   }
   return changed;
 }
@@ -305,7 +312,8 @@ function touchesChange(clone: Clone, changed: ReadonlyMap<string, ChangedLines>)
       return false;
     }
     return (
-      lines === 'all' || lines.some(([first, last]) => first <= place.end && place.start <= last)
+      lines === WholeFile.ALL ||
+      lines.some(([first, last]) => first <= place.end && place.start <= last)
     );
   });
 }

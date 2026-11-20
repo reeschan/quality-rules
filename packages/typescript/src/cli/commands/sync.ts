@@ -1,8 +1,9 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { isMissingFile } from '../../catalog/conventions.ts';
-import { type Catalog, loadCatalog } from '../../catalog/load.ts';
-import { formatJson } from '../../generate/biome.ts';
+import { loadCatalog } from '../../catalog/load.ts';
+import type { Catalog } from '../../catalog/types.ts';
+import { isMissingFile } from '../../errors.ts';
+import { formatJson } from '../../generate/format.ts';
 import {
   findUnknownFiles,
   GENERATED_DIR,

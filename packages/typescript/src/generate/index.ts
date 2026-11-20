@@ -1,12 +1,14 @@
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { isMissingFile } from '../catalog/conventions.ts';
-import type { Catalog } from '../catalog/load.ts';
-import type { Toolchain } from '../manifest/manifest.ts';
+import { FragmentKind } from '../catalog/fragment-kind.ts';
+import type { Catalog } from '../catalog/types.ts';
+import { isMissingFile } from '../errors.ts';
+import { Toolchain } from '../manifest/manifest.ts';
 import type { Resolution } from '../resolve/resolve.ts';
-import { biomeConfig, biomeGenerator, type FormatStyle, styleOf } from './biome.ts';
+import { biomeConfig, biomeGenerator, styleOf } from './biome.ts';
 import { dependencyCruiserGenerator } from './dependency-cruiser.ts';
 import { eslintGenerator } from './eslint.ts';
+import type { FormatStyle } from './format.ts';
 import { knipGenerator } from './knip.ts';
 import { oxlintGenerator } from './oxlint.ts';
 import { oxlintPluginGenerator } from './oxlint-plugin.ts';
@@ -48,22 +50,22 @@ interface ToolchainSetup {
   /** The tools of the toolchain, as they are named in a sentence. */
   readonly label: string;
   /** The configuration fragment kinds that the toolchain's generators read. */
-  readonly kinds: readonly string[];
+  readonly kinds: readonly FragmentKind[];
   readonly generators: readonly Generator[];
   /** The layout that the toolchain's formatter gives the generated text files. */
   style(resolution: Resolution): FormatStyle;
 }
 
 const TOOLCHAIN_SETUPS: Readonly<Record<Toolchain, ToolchainSetup>> = {
-  'biome-oxlint': {
+  [Toolchain.BIOME_OXLINT]: {
     label: 'Biome and oxlint',
-    kinds: ['biome', 'oxlint'],
+    kinds: [FragmentKind.BIOME, FragmentKind.OXLINT],
     generators: [biomeGenerator, oxlintGenerator, oxlintPluginGenerator],
     style: (resolution) => styleOf(biomeConfig(resolution)),
   },
-  'eslint-prettier': {
+  [Toolchain.ESLINT_PRETTIER]: {
     label: 'ESLint and Prettier',
-    kinds: ['eslint', 'prettier'],
+    kinds: [FragmentKind.ESLINT, FragmentKind.PRETTIER],
     generators: [eslintGenerator, prettierGenerator],
     style: (resolution) => prettierStyle(prettierConfig(resolution)),
   },

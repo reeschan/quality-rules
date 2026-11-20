@@ -1,6 +1,6 @@
 import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { QualityRulesError } from '../catalog/conventions.ts';
+import { QualityRulesError } from '../errors.ts';
 
 /** JavaScript and TypeScript source files, with or without JSX. */
 export const SOURCE_FILE = /\.(?:[cm]?[jt]s|[jt]sx)$/;

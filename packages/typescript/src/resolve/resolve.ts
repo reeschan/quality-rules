@@ -1,16 +1,10 @@
-import { listLines, QualityRulesError } from '../catalog/conventions.ts';
-import {
-  type Catalog,
-  type CatalogConvention,
-  type CatalogPack,
-  type CatalogRule,
-  compareIds,
-  isObject,
-  type Json,
-  type JsonObject,
-  OPTIONS_PLACEHOLDER,
-} from '../catalog/load.ts';
-import type { Manifest } from '../manifest/manifest.ts';
+import type { FragmentKind } from '../catalog/fragment-kind.ts';
+import { compareIds } from '../catalog/names.ts';
+import { OPTIONS_PLACEHOLDER } from '../catalog/pack-file.ts';
+import type { Catalog, CatalogConvention, CatalogPack, CatalogRule } from '../catalog/types.ts';
+import { listLines, QualityRulesError } from '../errors.ts';
+import { isObject, type Json, type JsonObject } from '../json.ts';
+import { type Manifest, ManifestField } from '../manifest/manifest.ts';
 import {
   type AcceptRequest,
   acceptedVersions,
@@ -211,9 +205,9 @@ function installedVersions(catalog: Catalog): Record<string, string> {
 /** Problems with the IDs that `exclude`, `include` and `options` name. */
 function checkSelection(kept: KeptSelection, ids: CatalogIds): string[] {
   const problems: string[] = [];
-  reportUnknown('exclude', kept.exclude, ids.known, problems);
-  reportUnknown('include', kept.include, ids.known, problems);
-  reportUnknown('options', Object.keys(kept.options), ids.known, problems);
+  reportUnknown(ManifestField.EXCLUDE, kept.exclude, ids.known, problems);
+  reportUnknown(ManifestField.INCLUDE, kept.include, ids.known, problems);
+  reportUnknown(ManifestField.OPTIONS, Object.keys(kept.options), ids.known, problems);
   const excluded = new Set(kept.exclude);
   for (const id of kept.include) {
     if (excluded.has(id)) {
@@ -271,7 +265,7 @@ function selectPacks(
 }
 
 function reportUnknown(
-  field: string,
+  field: ManifestField,
   ids: readonly string[],
   known: (id: string) => boolean,
   problems: string[]
@@ -326,7 +320,7 @@ function applyOptions(
  */
 export function fragmentsFor(
   resolution: Resolution,
-  kind: string
+  kind: FragmentKind
 ): { active: JsonObject[]; inactive: JsonObject[] } {
   const active: JsonObject[] = [];
   const inactive: JsonObject[] = [];

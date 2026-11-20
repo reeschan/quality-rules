@@ -1,12 +1,12 @@
 import path from 'node:path';
+import { parseConventionDocument } from '../catalog/convention-document.ts';
 import {
-  CONVENTION_CATEGORIES,
-  listLines,
-  parseConventionDocument,
-  QualityRulesError,
+  CONVENTION_CATEGORY_NAMES,
+  isConventionCategory,
   readMarkdownFolder,
 } from '../catalog/conventions.ts';
-import type { Catalog } from '../catalog/load.ts';
+import type { Catalog } from '../catalog/types.ts';
+import { listLines, QualityRulesError } from '../errors.ts';
 import type { LocalConventionsField } from './manifest.ts';
 
 /** The project's own conventions, as `sync` sees them. */
@@ -33,9 +33,9 @@ export async function checkLocalConventions(
   }
   const problems: string[] = [];
   const notices: string[] = [];
-  if (CONVENTION_CATEGORIES.includes(local.prefix)) {
+  if (isConventionCategory(local.prefix)) {
     problems.push(
-      `"local.prefix" ${local.prefix} is a category name of the package conventions (${CONVENTION_CATEGORIES.join(', ')}); choose another prefix, such as PROJ`
+      `"local.prefix" ${local.prefix} is a category name of the package conventions (${CONVENTION_CATEGORY_NAMES.join(', ')}); choose another prefix, such as PROJ`
     );
   }
   const packageIds = new Map<string, string>([

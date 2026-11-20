@@ -1,22 +1,18 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import {
-  type Convention,
-  isMissingFile,
-  isPackName,
-  isVersion,
-  listLines,
-  QualityRulesError,
-  readPublishedConventions,
-} from './conventions.ts';
-
-/** A JSON value, as read from pack files and the manifest. */
-export type Json = null | boolean | number | string | readonly Json[] | JsonObject;
-
-/** A JSON object. */
-export interface JsonObject {
-  readonly [key: string]: Json;
-}
+import { isMissingFile, listLines, QualityRulesError } from '../errors.ts';
+import { isObject } from '../json.ts';
+import { readPublishedConventions } from './conventions.ts';
+import { FragmentKind } from './fragment-kind.ts';
+import { compareIds, isPackageName, isVersion } from './names.ts';
+import { readPackFile, readPackFiles } from './pack-file.ts';
+import type {
+  Catalog,
+  CatalogConvention,
+  CatalogPack,
+  CatalogPackage,
+  CatalogRule,
+} from './types.ts';
 
 /**
  * Key in a package's `package.json` that marks it as a provider of packs. Its value says where
@@ -28,63 +24,6 @@ export interface JsonObject {
  * ```
  */
 export const PACKAGE_FIELD = 'qualityRules';
-
-/** An installed package that provides packs. */
-export interface CatalogPackage {
-  readonly name: string;
-  readonly version: string;
-  readonly dir: string;
-  /** Import specifier of the module whose named export `rules` holds the custom lint rules. */
-  readonly rulesModule: string | undefined;
-}
-
-/** One rule of a pack file (`packs/<pack>.json`). */
-export interface CatalogRule {
-  readonly id: string;
-  readonly pack: string;
-  readonly package: string;
-  /** The tool that checks the rule, such as `oxlint` or `biome`. */
-  readonly tool: string;
-  readonly description: string;
-  /** Package version that added the rule. */
-  readonly added: string;
-  /**
-   * Default options. The manifest's `options` entry for the rule replaces a scalar default
-   * and is merged key by key into an object default.
-   */
-  readonly options: Json | undefined;
-  /**
-   * Configuration fragments by generated file kind (`biome`, `oxlint`, `eslint`, `prettier`,
-   * ...). The string `{{options}}` stands for the resolved options and `{{options.<key>}}` for
-   * one of their keys. An `eslint` fragment is a flat config object with only `rules`,
-   * `plugins`, `settings` and `linterOptions`, where `plugins` maps each plugin's name (the
-   * prefix of its rule IDs) to the package whose default export is the plugin.
-   */
-  readonly config: Readonly<Record<string, JsonObject>>;
-}
-
-/** One convention, with the package that ships it. */
-export interface CatalogConvention extends Convention {
-  readonly package: string;
-}
-
-/** A pack: the rules of its pack files and the conventions whose `pack` field names it. */
-export interface CatalogPack {
-  readonly name: string;
-  /** Description from the pack file. Packs of conventions only have none. */
-  readonly description: string | undefined;
-  readonly packages: readonly string[];
-  readonly rules: readonly CatalogRule[];
-  readonly conventions: readonly CatalogConvention[];
-}
-
-/** Everything the installed packages provide. */
-export interface Catalog {
-  readonly packages: readonly CatalogPackage[];
-  readonly packs: readonly CatalogPack[];
-  readonly rules: readonly CatalogRule[];
-  readonly conventions: readonly CatalogConvention[];
-}
 
 interface PackageFile {
   readonly name?: unknown;
@@ -102,15 +41,8 @@ interface LoadedPackage {
   readonly conventions: readonly CatalogConvention[];
 }
 
-/** A string in a configuration fragment that stands for the options or one of their keys. */
-export const OPTIONS_PLACEHOLDER = /^\{\{options(?:\.(?<key>[^{}.]+))?\}\}$/;
-const PACKAGE_NAME = /^(?:@[a-z0-9~-][a-z0-9._~-]*\/)?[a-z0-9~-][a-z0-9._~-]*$/;
 const EXPORT_PATH = /^\.(?:\/[A-Za-z0-9._@-]+)*$/;
 const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'optionalDependencies'] as const;
-/** The keys that an `eslint` fragment may have. */
-const ESLINT_FRAGMENT_KEYS = ['rules', 'plugins', 'settings', 'linterOptions'];
-/** The plugin that the generated files build from the custom rules of the packages. */
-const CUSTOM_RULES_PLUGIN = 'quality-rules';
 
 /**
  * Reads the catalog from the packages that the project at `projectDir` lists in its
@@ -207,7 +139,7 @@ async function loadPackage(dir: string, problems: string[]): Promise<LoadedPacka
   const file = await readPackageFile(packageJsonOf(dir));
   const name = typeof file.name === 'string' ? file.name : dir;
   // The name and the rules export end up in the generated plugin's import statements.
-  if (!PACKAGE_NAME.test(name)) {
+  if (!isPackageName(name)) {
     problems.push(`${name}: package.json has no valid package name`);
   }
   const version = isVersion(file.version) ? file.version : '0.0.0';
@@ -253,177 +185,6 @@ async function loadPackage(dir: string, problems: string[]): Promise<LoadedPacka
 function toSpecifier(name: string, exportPath: string): string {
   const subpath = exportPath.replace(/^\.\/?/, '');
   return subpath === '' ? name : `${name}/${subpath}`;
-}
-
-async function readPackFiles(dir: string): Promise<Map<string, string>> {
-  const files = new Map<string, string>();
-  let names: string[];
-  try {
-    names = await readdir(dir);
-  } catch (error) {
-    if (isMissingFile(error)) {
-      return files;
-    }
-    throw error;
-  }
-  for (const name of names.filter((entry) => entry.endsWith('.json')).sort()) {
-    files.set(name.slice(0, -'.json'.length), await readFile(path.join(dir, name), 'utf8'));
-  }
-  return files;
-}
-
-function readPackFile(
-  text: string,
-  pack: string,
-  packageName: string
-): { description: string; rules: CatalogRule[]; problems: string[] } {
-  const problems: string[] = [];
-  if (!isPackName(pack)) {
-    problems.push(`pack name "${pack}" is not a lowercase name such as size-limits`);
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch (error) {
-    problems.push(`is not valid JSON (${error instanceof Error ? error.message : String(error)})`);
-    return { description: '', rules: [], problems };
-  }
-  if (!isObject(parsed)) {
-    problems.push('is not a JSON object');
-    return { description: '', rules: [], problems };
-  }
-  const description = typeof parsed.description === 'string' ? parsed.description : '';
-  if (description === '') {
-    problems.push('missing "description"');
-  }
-  if (!Array.isArray(parsed.rules)) {
-    problems.push('missing the "rules" array');
-    return { description, rules: [], problems };
-  }
-  const rules: CatalogRule[] = [];
-  parsed.rules.forEach((entry: unknown, index: number) => {
-    const rule = readRuleEntry(entry, pack, packageName);
-    const label = typeof rule.id === 'string' && rule.id !== '' ? ` (${rule.id})` : '';
-    problems.push(...rule.problems.map((problem) => `rules[${index}]${label}: ${problem}`));
-    if (rule.problems.length === 0 && rule.value !== undefined) {
-      rules.push(rule.value);
-    }
-  });
-  return { description, rules, problems };
-}
-
-function readRuleEntry(
-  entry: unknown,
-  pack: string,
-  packageName: string
-): { id: unknown; value: CatalogRule | undefined; problems: string[] } {
-  if (!isObject(entry)) {
-    return { id: undefined, value: undefined, problems: ['is not a JSON object'] };
-  }
-  const problems: string[] = [];
-  const { id, tool, description, added, options } = entry;
-  for (const [key, value] of Object.entries({ id, tool, description })) {
-    if (typeof value !== 'string' || value.trim() === '') {
-      problems.push(`missing "${key}"`);
-    }
-  }
-  if (typeof id === 'string' && /\s/.test(id)) {
-    problems.push(`id "${id}" contains white space`);
-  }
-  if (added === undefined) {
-    problems.push('missing "added" (the package version that added the rule)');
-  } else if (!isVersion(added)) {
-    problems.push(`added "${String(added)}" is not a version such as 1.2.0`);
-  }
-  const config = entry.config ?? {};
-  if (!isObject(config) || !Object.values(config).every(isObject)) {
-    problems.push('"config" is not an object of configuration objects by tool');
-  } else {
-    problems.push(...checkPlaceholders(config, options as Json | undefined));
-    problems.push(...checkEslintFragment(config.eslint));
-  }
-  if (problems.length > 0) {
-    return { id, value: undefined, problems };
-  }
-  return {
-    id,
-    value: {
-      id: id as string,
-      pack,
-      package: packageName,
-      tool: tool as string,
-      description: description as string,
-      added: added as string,
-      options: options as Json | undefined,
-      config: config as Record<string, JsonObject>,
-    },
-    problems,
-  };
-}
-
-function checkPlaceholders(config: unknown, options: Json | undefined): string[] {
-  const problems: string[] = [];
-  visitStrings(config, (value) => {
-    if (!value.includes('{{')) {
-      return;
-    }
-    const match = OPTIONS_PLACEHOLDER.exec(value);
-    if (match === null) {
-      problems.push(`"${value}" is not {{options}} or {{options.<key>}}`);
-    } else if (options === undefined) {
-      problems.push(`"${value}" is used but the rule has no default "options"`);
-    } else if (match.groups?.key !== undefined) {
-      const key = match.groups.key;
-      if (!isObject(options) || !Object.hasOwn(options, key)) {
-        problems.push(`"${value}" names a key that the default "options" do not have`);
-      }
-    }
-  });
-  return problems;
-}
-
-/**
- * Problems with an `eslint` fragment. Its plugin packages end up in the import statements of
- * the generated configuration, so they must be package names.
- */
-function checkEslintFragment(fragment: unknown): string[] {
-  if (!isObject(fragment)) {
-    return [];
-  }
-  const problems = Object.keys(fragment)
-    .filter((key) => !ESLINT_FRAGMENT_KEYS.includes(key))
-    .map((key) => `"config.eslint" has "${key}"; it takes ${ESLINT_FRAGMENT_KEYS.join(', ')}`);
-  const { plugins } = fragment;
-  if (plugins === undefined) {
-    return problems;
-  }
-  if (!isObject(plugins)) {
-    problems.push('"config.eslint.plugins" is not an object of package names by plugin name');
-    return problems;
-  }
-  for (const [name, packageName] of Object.entries(plugins)) {
-    if (!PACKAGE_NAME.test(name) || name === CUSTOM_RULES_PLUGIN) {
-      problems.push(`"config.eslint.plugins" has the plugin name "${name}", which is not allowed`);
-    }
-    if (typeof packageName !== 'string' || !PACKAGE_NAME.test(packageName)) {
-      problems.push(`"config.eslint.plugins.${name}" is not a package name`);
-    }
-  }
-  return problems;
-}
-
-function visitStrings(value: unknown, visit: (text: string) => void): void {
-  if (typeof value === 'string') {
-    visit(value);
-  } else if (Array.isArray(value)) {
-    for (const item of value) {
-      visitStrings(item, visit);
-    }
-  } else if (isObject(value)) {
-    for (const item of Object.values(value)) {
-      visitStrings(item, visit);
-    }
-  }
 }
 
 function assembleCatalog(loaded: readonly LoadedPackage[]): Catalog {
@@ -492,7 +253,7 @@ function checkCatalog(catalog: Catalog): string[] {
 function checkEslintPlugins(rules: readonly CatalogRule[]): string[] {
   const packagesByPlugin = new Map<string, string[]>();
   for (const rule of rules) {
-    const plugins = rule.config.eslint?.plugins;
+    const plugins = rule.config[FragmentKind.ESLINT]?.plugins;
     for (const [name, packageName] of Object.entries(isObject(plugins) ? plugins : {})) {
       const known = packagesByPlugin.get(name) ?? [];
       if (!known.includes(packageName as string)) {
@@ -509,16 +270,6 @@ function pushTo(map: Map<string, string[]>, key: string, value: string): void {
   const list = map.get(key) ?? [];
   list.push(value);
   map.set(key, list);
-}
-
-/** Orders IDs by text, with numbers by value (`NAME-2` before `NAME-10`). */
-export function compareIds(a: string, b: string): number {
-  return a.localeCompare(b, 'en', { numeric: true });
-}
-
-/** Whether a value is a plain JSON object (not an array or null). */
-export function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function stringOr(value: unknown, fallback: string): string {

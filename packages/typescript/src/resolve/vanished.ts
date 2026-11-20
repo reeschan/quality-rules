@@ -1,14 +1,6 @@
-import { compareIds, type Json } from '../catalog/load.ts';
-import type { Manifest } from '../manifest/manifest.ts';
-
-/** The manifest fields that name rules and conventions by ID. */
-export const ManifestField = {
-  RESOLVED: 'resolved',
-  EXCLUDE: 'exclude',
-  INCLUDE: 'include',
-  OPTIONS: 'options',
-} as const;
-export type ManifestField = (typeof ManifestField)[keyof typeof ManifestField];
+import { compareIds } from '../catalog/names.ts';
+import type { Json } from '../json.ts';
+import { type Manifest, ManifestField } from '../manifest/manifest.ts';
 
 /** An ID that the manifest names but the installed packages no longer have. */
 export interface VanishedItem {

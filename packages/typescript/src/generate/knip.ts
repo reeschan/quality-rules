@@ -1,6 +1,7 @@
-import { isObject, type Json, type JsonObject } from '../catalog/load.ts';
+import { FragmentKind } from '../catalog/fragment-kind.ts';
+import { isObject, type Json, type JsonObject, mergeJson, withDefaults } from '../json.ts';
 import { fragmentsFor, type Resolution } from '../resolve/resolve.ts';
-import { columns, type FormatStyle, mergeJson, withDefaults } from './biome.ts';
+import { columns, type FormatStyle } from './format.ts';
 import type { Generator } from './index.ts';
 
 /** File name of the generated knip preset. */
@@ -12,7 +13,7 @@ export const KNIP_FILE = 'knip.mjs';
  * stays quiet about them too.
  */
 export function knipConfig(resolution: Resolution): JsonObject {
-  const { active, inactive } = fragmentsFor(resolution, 'knip');
+  const { active, inactive } = fragmentsFor(resolution, FragmentKind.KNIP);
   const merged = active.reduce<Json>(mergeJson, {}) as JsonObject;
   const off: Record<string, Json> = {};
   for (const fragment of inactive) {

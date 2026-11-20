@@ -1,12 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import {
-  CATEGORY_NAME,
-  isMissingFile,
-  listLines,
-  QualityRulesError,
-} from '../catalog/conventions.ts';
-import { isObject, type Json, type JsonObject } from '../catalog/load.ts';
+import { CATEGORY_NAME } from '../catalog/names.ts';
+import { isMissingFile, listLines, QualityRulesError } from '../errors.ts';
+import { isObject, type Json, type JsonObject } from '../json.ts';
 
 /** File name of the manifest, at the root of the project. */
 export const MANIFEST_FILE = 'quality-rules.json';
@@ -16,13 +12,23 @@ export const MANIFEST_FILE = 'quality-rules.json';
  * Prettier. Every toolchain also gets the files of the tools it does not replace (knip,
  * dependency-cruiser).
  */
-export const TOOLCHAINS = ['biome-oxlint', 'eslint-prettier'] as const;
-
-/** One of {@link TOOLCHAINS}. */
-export type Toolchain = (typeof TOOLCHAINS)[number];
+export const Toolchain = {
+  BIOME_OXLINT: 'biome-oxlint',
+  ESLINT_PRETTIER: 'eslint-prettier',
+} as const;
+export type Toolchain = (typeof Toolchain)[keyof typeof Toolchain];
 
 /** The toolchain of a manifest that names none. */
-export const DEFAULT_TOOLCHAIN: Toolchain = 'biome-oxlint';
+export const DEFAULT_TOOLCHAIN: Toolchain = Toolchain.BIOME_OXLINT;
+
+/** The manifest fields that name rules and conventions by ID. */
+export const ManifestField = {
+  RESOLVED: 'resolved',
+  EXCLUDE: 'exclude',
+  INCLUDE: 'include',
+  OPTIONS: 'options',
+} as const;
+export type ManifestField = (typeof ManifestField)[keyof typeof ManifestField];
 
 /**
  * The project's manifest: which packs it takes, which rules and conventions it leaves out,
@@ -129,15 +135,16 @@ function checkManifest(raw: Record<string, unknown>): string[] {
   }
   problems.push(...checkLocal(raw.local));
   if (raw.toolchain !== undefined && !isToolchain(raw.toolchain)) {
+    const choices = Object.values(Toolchain).map((name) => `"${name}"`);
     problems.push(
-      `"toolchain" is ${JSON.stringify(raw.toolchain)}; use ${TOOLCHAINS.map((name) => `"${name}"`).join(' or ')} (default "${DEFAULT_TOOLCHAIN}")`
+      `"toolchain" is ${JSON.stringify(raw.toolchain)}; use ${choices.join(' or ')} (default "${DEFAULT_TOOLCHAIN}")`
     );
   }
   return problems;
 }
 
 function isToolchain(value: unknown): value is Toolchain {
-  return TOOLCHAINS.some((name) => name === value);
+  return Object.values(Toolchain).some((name) => name === value);
 }
 
 function checkLocal(local: unknown): string[] {
@@ -184,9 +191,9 @@ export function updateManifest(manifest: Manifest, update: ManifestUpdate): Json
   const removedFrom = new Set(fieldsWithRemovedIds(manifest, update));
   return {
     ...manifest.raw,
-    ...(removedFrom.has('exclude') ? { exclude: update.exclude } : {}),
-    ...(removedFrom.has('include') ? { include: update.include } : {}),
-    ...(removedFrom.has('options') ? { options: update.options as JsonObject } : {}),
+    ...(removedFrom.has(ManifestField.EXCLUDE) ? { exclude: update.exclude } : {}),
+    ...(removedFrom.has(ManifestField.INCLUDE) ? { include: update.include } : {}),
+    ...(removedFrom.has(ManifestField.OPTIONS) ? { options: update.options as JsonObject } : {}),
     packages: update.packages,
     resolved: update.resolved,
   };
@@ -198,11 +205,14 @@ export function updatedFields(manifest: Manifest, update: ManifestUpdate): strin
 }
 
 /** The fields that the project writes and `sync` removed IDs from. */
-function fieldsWithRemovedIds(manifest: Manifest, update: ManifestUpdate): string[] {
+function fieldsWithRemovedIds(manifest: Manifest, update: ManifestUpdate): ManifestField[] {
   const changed = [
-    ['exclude', update.exclude.length !== manifest.exclude.length],
-    ['include', update.include.length !== manifest.include.length],
-    ['options', Object.keys(update.options).length !== Object.keys(manifest.options).length],
+    [ManifestField.EXCLUDE, update.exclude.length !== manifest.exclude.length],
+    [ManifestField.INCLUDE, update.include.length !== manifest.include.length],
+    [
+      ManifestField.OPTIONS,
+      Object.keys(update.options).length !== Object.keys(manifest.options).length,
+    ],
   ] as const;
   return changed.filter(([, removed]) => removed).map(([field]) => field);
 }

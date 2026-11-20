@@ -1,6 +1,7 @@
-import { isObject, type Json, type JsonObject } from '../catalog/load.ts';
+import { FragmentKind } from '../catalog/fragment-kind.ts';
+import { isObject, type Json, type JsonObject, mergeJson, withDefaults } from '../json.ts';
 import { fragmentsFor, type Resolution } from '../resolve/resolve.ts';
-import { formatJson, mergeJson, withDefaults } from './biome.ts';
+import { formatJson } from './format.ts';
 import type { Generator } from './index.ts';
 import { OXLINT_PLUGIN_FILE } from './oxlint-plugin.ts';
 
@@ -10,7 +11,7 @@ import { OXLINT_PLUGIN_FILE } from './oxlint-plugin.ts';
  * turns on by default stays quiet too.
  */
 export function oxlintConfig(resolution: Resolution): JsonObject {
-  const { active, inactive } = fragmentsFor(resolution, 'oxlint');
+  const { active, inactive } = fragmentsFor(resolution, FragmentKind.OXLINT);
   const merged = active.reduce<Json>(mergeJson, {}) as JsonObject;
   const off: Record<string, Json> = {};
   for (const fragment of inactive) {

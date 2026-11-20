@@ -14,7 +14,9 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { bundleConventions, QualityRulesError } from '../src/catalog/conventions.ts';
+import { bundleConventions } from '../src/catalog/bundle.ts';
+import { PACKAGE_FIELD } from '../src/catalog/load.ts';
+import { QualityRulesError } from '../src/errors.ts';
 
 /** Name of the private workspace package that holds the common conventions. */
 const COMMON_PACKAGE = '@reeschan/quality-rules-common';
@@ -23,9 +25,9 @@ const packageDir = path.resolve(fileURLToPath(import.meta.url), '..', '..');
 
 async function defaultOutDir(): Promise<string> {
   const manifest = JSON.parse(await readFile(path.join(packageDir, 'package.json'), 'utf8')) as {
-    qualityRules?: { conventions?: string };
+    [PACKAGE_FIELD]?: { conventions?: string };
   };
-  return path.join(packageDir, manifest.qualityRules?.conventions ?? 'dist/conventions');
+  return path.join(packageDir, manifest[PACKAGE_FIELD]?.conventions ?? 'dist/conventions');
 }
 
 function defaultCommonDir(): string {

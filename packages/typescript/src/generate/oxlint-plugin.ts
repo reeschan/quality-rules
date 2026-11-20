@@ -1,12 +1,10 @@
-import type { Catalog } from '../catalog/load.ts';
-import { columns, type FormatStyle } from './biome.ts';
+import type { Catalog } from '../catalog/types.ts';
+import { PLUGIN_NAME } from '../plugin-name.ts';
+import { columns, type FormatStyle } from './format.ts';
 import type { Generator } from './index.ts';
 
 /** File name of the generated plugin, which `quality-rules/oxlint.json` loads. */
 export const OXLINT_PLUGIN_FILE = 'oxlint-plugin.mjs';
-
-/** Name of the plugin, which oxlint and ESLint use as the prefix of its rule IDs. */
-export const PLUGIN_NAME = 'quality-rules';
 
 /**
  * The source of `quality-rules/oxlint-plugin.mjs`: one plugin named `quality-rules` that holds
